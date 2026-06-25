@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Infarm CS — Pesan Broadcast</title>
+  <link rel="stylesheet" href="dashboard.css" />
+  <link rel="stylesheet" href="broadcast.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- ======================= TOP BAR ======================= -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <img class="brand-logo" src="logo-infarm.png" alt="Infarm.ID" />
+        <span class="topbar-title">Customer Service Console</span>
+      </div>
+      <div class="topbar-right">
+        <button class="lang-pill">ID ▾</button>
+        <button class="icon-btn" title="Statistik">📊</button>
+        <button class="icon-btn" title="Notifikasi"><span class="dot-badge">3</span>🔔</button>
+        <a class="icon-btn" href="index.html" title="Keluar" style="text-decoration:none">⎋</a>
+      </div>
+    </header>
+
+    <div class="workspace">
+
+      <!-- ======================= ICON RAIL ======================= -->
+      <nav class="rail">
+        <a class="rail-btn" href="beranda.html" title="Beranda">🏠</a>
+        <a class="rail-btn" href="dashboard.html" title="Chat"><span class="rail-badge">99+</span>💬</a>
+        <a class="rail-btn" href="pesanan.html" title="Pesanan">📦</a>
+        <a class="rail-btn" href="ai.html" title="AI Chatbot">🤖</a>
+        <a class="rail-btn active" href="broadcast.html" title="Broadcast">📣</a>
+        <a class="rail-btn" href="statistik.html" title="Statistik">📈</a>
+        <div class="rail-spacer"></div>
+        <a class="rail-btn" href="settings.html" title="Pengaturan">⚙️</a>
+        <a class="rail-btn" href="index.html" title="Akun">👤</a>
+      </nav>
+
+      <!-- ======================= BROADCAST CONTENT ======================= -->
+      <main class="bc">
+
+        <!-- Platform tabs: tiap marketplace halaman sendiri -->
+        <div class="bc-tabs">
+          <button class="bc-tab" data-mp="lazada">Lazada</button>
+          <button class="bc-tab active" data-mp="shopee">Shopee</button>
+          <button class="bc-tab" data-mp="tiktok">TikTok</button>
+        </div>
+
+        <!-- ====================== VIEW: DAFTAR TUGAS ====================== -->
+        <section class="bc-view" id="viewList">
+          <div class="bc-banner" id="bcBanner">
+            <span>⚠️ Jumlah pembeli yang dapat dilayani melalui fitur Pesan Broadcast akan segera habis. Anda dapat <a href="#">Tingkatkan ke VIP</a> untuk mendapatkan lebih banyak kuota.</span>
+            <button class="banner-close" onclick="this.parentElement.style.display='none'">✕</button>
+          </div>
+
+          <div class="bc-toolbar">
+            <select class="scope-select"><option>Status</option><option>Selesai</option><option>Sedang Dikirim</option><option>Draf</option></select>
+            <div class="search-field"><span class="search-ico">🔍</span><input placeholder="Harap isi Nama Tugas" /></div>
+            <div class="quota">
+              <span class="quota-text" id="quotaText">1/50 ⓘ</span>
+              <button class="mini-btn" title="Segarkan">⟳</button>
+            </div>
+            <button class="add-btn" id="addBtn">＋ Tambah Tugas</button>
+          </div>
+          <div class="quota-bar"><span id="quotaFill"></span></div>
+
+          <div class="table-wrap">
+            <table class="bc-table">
+              <thead>
+                <tr>
+                  <th>Nama</th><th>Status</th>
+                  <th>Rencana Jumlah Dikirim</th>
+                  <th>Berhasil Dikirim</th>
+                  <th>Gagal Dikirim</th>
+                  <th>Pembuat / Waktu Membuat</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="bcBody"><!-- diisi JS --></tbody>
+            </table>
+            <div class="empty-state" id="bcEmpty" hidden><div class="empty-ill">📦</div><p>Tidak Ada Data</p></div>
+          </div>
+
+          <div class="table-foot">
+            <span>Total <b id="bcTotal">0</b></span>
+            <select class="scope-select sm"><option>50/halaman</option></select>
+            <span class="pager">Pergi ke <input class="page-input" value="1" /></span>
+          </div>
+        </section>
+
+        <!-- ====================== VIEW: TAMBAH TUGAS ====================== -->
+        <section class="bc-view" id="viewForm" hidden>
+          <div class="form-topnav">
+            <button class="back-link" id="backLink">‹ Kembali ke Daftar</button>
+            <span class="form-mp-label">Broadcast <b id="formMp">Shopee</b></span>
+          </div>
+
+          <!-- Informasi Dasar -->
+          <div class="form-card">
+            <div class="form-card-title">Informasi Dasar</div>
+
+            <label class="req">Nama</label>
+            <div class="input-count">
+              <input type="text" id="taskName" maxlength="50" placeholder="Harap Isi" />
+              <span class="count" id="nameCount">0 / 50</span>
+            </div>
+
+            <label class="req">Penerima</label>
+            <div class="radio-list">
+              <label class="radio-row"><input type="radio" name="penerima" value="penandaan" checked /> Penandaan Pembeli yang Ditentukan <a class="pick-link">Pilih</a></label>
+              <label class="radio-row"><input type="radio" name="penerima" value="pesanan" /> Pesanan yang Ditentukan ⓘ</label>
+              <label class="radio-row"><input type="radio" name="penerima" value="impor" /> Impor Pesanan</label>
+            </div>
+          </div>
+
+          <!-- Konten Pengiriman -->
+          <div class="form-card">
+            <div class="form-card-title">Konten Pengiriman</div>
+
+            <div class="form-banner">
+              ⚠️ Karena keterbatasan antar muka API Shopee, jika pembeli belum membalas pesan maksimal hanya dapat mengirimkan 5 pesan. 1 kartu produk / 1 voucher belanja dihitung sebagai 1 pesan terpisah.
+            </div>
+
+            <label class="req">Kirim Pesan</label>
+            <div class="msg-box">
+              <div class="msg-box-head">
+                <span>Nama Pembeli</span>
+                <div class="msg-box-tools">
+                  <button class="ai-fill" id="aiFill" title="Bantu tulis dengan AI">✨ Bantu tulis (AI)</button>
+                  <button class="mb-ico" title="Sisipkan gambar">🖼️</button>
+                  <button class="mb-ico" title="Hapus">🗑️</button>
+                </div>
+              </div>
+              <textarea id="msgText" maxlength="500" placeholder="Harap Isi — sapa dengan 'Kak', ramah & tidak memaksa (sesuai claude.md)"></textarea>
+              <span class="count mb-count" id="msgCount">0 / 500</span>
+            </div>
+
+            <div class="content-add">
+              <button class="add-chip" id="pickProduct">＋ Pilih Produk</button>
+              <button class="add-chip" id="pickVoucher">＋ Pilih Voucher</button>
+            </div>
+            <div class="attached" id="attached"></div>
+          </div>
+
+          <!-- Bottom action bar -->
+          <div class="form-actions-bar">
+            <div class="fab-left">
+              <button class="btn-blue" id="sendTask">Kirim</button>
+              <button class="btn-ghost" id="saveTask">Simpan</button>
+              <button class="btn-ghost" id="cancelTask">Batalkan</button>
+            </div>
+            <label class="check-inline"><input type="checkbox" checked /> Saat Kirim, Terjemahkan Otomatis 〔Pesan Dikirim〕</label>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+  <script src="rail.js"></script>
+  <script src="broadcast.js"></script>
+</body>
+</html>

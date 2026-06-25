@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Infarm CS — Dashboard Inbox</title>
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- ======================= TOP BAR ======================= -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <img class="brand-logo" src="logo-infarm.png" alt="Infarm.ID" />
+        <span class="topbar-title">Customer Service Console</span>
+      </div>
+      <div class="topbar-search">
+        <select class="scope-select" title="Cakupan pencarian">
+          <option>Semua</option>
+          <option>Belum dibaca</option>
+          <option>Perlu CS</option>
+        </select>
+        <div class="search-field">
+          <span class="search-ico">🔍</span>
+          <input type="text" placeholder="Cari no. pesanan / nama pelanggan…" />
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="lang-pill">ID ▾</button>
+        <button class="icon-btn" title="Toko terhubung" data-open-modal>🛍️</button>
+        <button class="icon-btn" title="Statistik">📊</button>
+        <button class="icon-btn" title="Notifikasi"><span class="dot-badge">3</span>🔔</button>
+        <button class="icon-btn" title="Aplikasi">⛶</button>
+      </div>
+    </header>
+
+    <div class="workspace">
+
+      <!-- ======================= ICON RAIL ======================= -->
+      <nav class="rail">
+        <a class="rail-btn" href="beranda.html" title="Beranda" style="display:grid;place-items:center;text-decoration:none;color:#fff">🏠</a>
+        <button class="rail-btn active" title="Chat"><span class="rail-badge">99+</span>💬</button>
+        <a class="rail-btn" href="pesanan.html" title="Pesanan" style="display:grid;place-items:center;text-decoration:none;color:#fff">📦</a>
+        <a class="rail-btn" href="ai.html" title="AI Chatbot" style="display:grid;place-items:center;text-decoration:none;color:#fff">🤖</a>
+        <a class="rail-btn" href="broadcast.html" title="Broadcast" style="display:grid;place-items:center;text-decoration:none;color:#fff">📣</a>
+        <a class="rail-btn" href="statistik.html" title="Statistik" style="display:grid;place-items:center;text-decoration:none;color:#fff">📈</a>
+        <div class="rail-spacer"></div>
+        <a class="rail-btn" href="settings.html" title="Pengaturan" style="display:grid;place-items:center;text-decoration:none;color:#fff">⚙️</a>
+        <a class="rail-btn" href="index.html" title="Keluar" style="display:grid;place-items:center;text-decoration:none;color:#fff">👤</a>
+      </nav>
+
+      <!-- ======================= SHOP LIST ======================= -->
+      <aside class="shops">
+        <div class="panel-head">
+          <span class="panel-title">Toko Terhubung</span>
+          <div class="panel-head-tools">
+            <button class="mini-btn" title="Filter">⚙</button>
+            <button class="mini-btn" title="Cari toko">🔍</button>
+          </div>
+        </div>
+
+        <div class="shop-group">Marketplace Terhubung</div>
+
+        <ul class="shop-list">
+          <li class="shop-item active"><span class="shop-logo shp">S</span><span class="shop-name">infarmofficialshop</span><span class="status online" title="Online"></span></li>
+          <li class="shop-item"><span class="shop-logo shp">S</span><span class="shop-name">infarm</span><span class="status online"></span></li>
+          <li class="shop-item"><span class="shop-logo tt">T</span><span class="shop-name">Infarm Official</span><span class="status online"></span></li>
+          <li class="shop-item"><span class="shop-logo shp">S</span><span class="shop-name">Infarm Yogyakarta</span><span class="status online"></span></li>
+          <li class="shop-item"><span class="shop-logo shp">S</span><span class="shop-name">Infarm Tangerang</span><span class="status away"></span></li>
+          <li class="shop-item"><span class="shop-logo tt">T</span><span class="shop-name">Infarm Jakarta</span><span class="status online"></span></li>
+          <li class="shop-item"><span class="shop-logo shp">S</span><span class="shop-name">Infarm Semarang</span><span class="status away"></span></li>
+          <li class="shop-item"><span class="shop-logo tt">T</span><span class="shop-name">Infarm Bali</span><span class="status online"></span></li>
+          <li class="shop-item"><span class="shop-logo lz">L</span><span class="shop-name">Infarm Surabaya</span><span class="status offline"></span></li>
+        </ul>
+
+        <button class="integrate-btn" data-open-modal>＋ Integrasikan Toko Baru</button>
+      </aside>
+
+      <!-- ======================= CONVERSATION LIST ======================= -->
+      <section class="conversations">
+        <div class="conv-tabs">
+          <button class="conv-tab active" data-filter="all">Semua</button>
+          <button class="conv-tab" data-filter="unread">Belum dibaca <span class="tab-count">2</span></button>
+          <button class="conv-tab" data-filter="cs">Perlu CS <span class="tab-count warn">1</span></button>
+        </div>
+        <div class="conv-search">
+          <span class="search-ico">🔍</span>
+          <input type="text" placeholder="Cari percakapan…" id="convSearch" />
+        </div>
+
+        <ul class="conv-list" id="convList"><!-- diisi oleh dashboard.js --></ul>
+      </section>
+
+      <!-- ======================= CHAT WINDOW ======================= -->
+      <main class="chat">
+        <div class="chat-head">
+          <div class="chat-head-left">
+            <span class="avatar lg" id="chatAvatar">DM</span>
+            <div>
+              <div class="chat-cust" id="chatCust">dikymarzuki</div>
+              <div class="chat-meta" id="chatMeta">infarmofficialshop · Shopee</div>
+            </div>
+          </div>
+          <div class="chat-head-stats">
+            <span class="stat">⏱ <strong>14:06</strong></span>
+            <span class="stat">💬 <strong id="chatCount">61</strong> chat</span>
+            <span class="stat">👁 <strong>376</strong> dilihat</span>
+            <button class="ghost-btn">Monitor Akun ›</button>
+          </div>
+        </div>
+
+        <div class="chat-stream" id="chatStream"><!-- diisi oleh dashboard.js --></div>
+
+        <!-- AI ASSIST (dari claude.md) -->
+        <div class="ai-assist" id="aiAssist">
+          <div class="ai-assist-head">
+            <span class="ai-badge">🤖 AI Assist</span>
+            <span class="tag tag-auto" id="aiTag">AUTO_REPLY</span>
+            <span class="ai-conf" id="aiConf">Sumber: Knowledge Base · keyakinan tinggi</span>
+          </div>
+          <p class="ai-suggestion" id="aiSuggestion">Bisa, Kak. Untuk POC Buah Infarm, dosis resminya 2 ml per 1 liter air…</p>
+          <div class="ai-actions">
+            <button class="ai-use" id="aiUse">Gunakan balasan</button>
+            <button class="ai-edit" id="aiEdit">Edit dulu</button>
+            <button class="ai-ho" id="aiHo">Alihkan ke CS</button>
+          </div>
+        </div>
+
+        <div class="composer">
+          <div class="composer-tools">
+            <button class="ctool" title="Emoji">😊</button>
+            <button class="ctool" title="Gambar">🖼️</button>
+            <button class="ctool" title="Video">🎬</button>
+            <button class="ctool" title="Produk">🏷️</button>
+            <span class="ctool-spacer"></span>
+            <button class="ctool" id="aiRegen" title="Minta saran AI">✨</button>
+            <button class="ctool" title="Balasan cepat">⚡</button>
+          </div>
+          <textarea class="composer-input" id="composerInput" placeholder="Klik / untuk memicu Balasan Cepat" maxlength="600"></textarea>
+          <div class="composer-foot">
+            <button class="lang-pill">🌐 Indonesia ▾</button>
+            <button class="translate-btn">Terjemahkan</button>
+            <span class="char-count" id="charCount">0/600</span>
+            <button class="send-btn" id="sendBtn">Kirim ▾</button>
+          </div>
+        </div>
+      </main>
+
+      <!-- ======================= CUSTOMER / ORDER PANEL ======================= -->
+      <aside class="info">
+        <div class="info-profile">
+          <span class="avatar xl" id="infoAvatar">DM</span>
+          <div>
+            <div class="info-name" id="infoName">dikymarzuki</div>
+            <div class="info-sub" id="infoSub">infarmofficialshop <span class="flag">ID</span></div>
+            <button class="label-btn">＋ Pilih Label</button>
+          </div>
+        </div>
+
+        <div class="info-tabs">
+          <button class="info-tab active" data-itab="pesanan">Pesanan</button>
+          <button class="info-tab" data-itab="produk">Rincian Produk</button>
+          <button class="info-tab" data-itab="voucher">Voucher</button>
+        </div>
+
+        <!-- Pane: Pesanan -->
+        <div class="info-pane active" id="pane-pesanan">
+          <div class="info-empty" id="infoOrder">
+            <div class="empty-ill">📦</div>
+            <p>Tidak Ada Pesanan dalam 1 Bulan Terakhir</p>
+          </div>
+        </div>
+
+        <!-- Pane: Rincian Produk (dari products.json) -->
+        <div class="info-pane" id="pane-produk" hidden>
+          <div class="prod-search">
+            <span class="search-ico">🔍</span>
+            <input type="text" id="prodSearch" placeholder="Cari produk / SKU…" />
+          </div>
+          <div class="prod-context" id="prodContext"></div>
+          <div class="prod-list" id="prodList"></div>
+        </div>
+
+        <!-- Pane: Voucher -->
+        <div class="info-pane" id="pane-voucher" hidden>
+          <div class="info-empty">
+            <div class="empty-ill">🎟️</div>
+            <p>Belum ada voucher aktif untuk pelanggan ini.</p>
+          </div>
+        </div>
+
+        <!-- Ringkasan handover internal (format dari claude.md) -->
+        <div class="handover-card">
+          <div class="handover-head">📝 Ringkasan Internal CS</div>
+          <ul class="handover-list" id="handoverList"><!-- diisi oleh dashboard.js --></ul>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+
+  <!-- ======================= MODAL: INTEGRASIKAN TOKO ======================= -->
+  <div class="modal-overlay" id="integrateModal" hidden>
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Integrasikan Toko Baru</h3>
+        <button class="modal-close" id="modalClose" title="Tutup">✕</button>
+      </div>
+      <p class="modal-desc">Hubungkan akun marketplace agar pesan chat & notifikasi pesanan masuk otomatis ke console ini. Kredensial diambil dari halaman developer masing-masing platform.</p>
+
+      <form class="modal-form" id="integrateForm">
+        <label>Platform</label>
+        <div class="platform-pick">
+          <label class="platform-opt"><input type="radio" name="platform" value="Shopee" checked /><span class="pp-logo shp">S</span> Shopee</label>
+          <label class="platform-opt"><input type="radio" name="platform" value="TikTok Shop" /><span class="pp-logo tt">T</span> TikTok Shop</label>
+          <label class="platform-opt"><input type="radio" name="platform" value="Lazada" /><span class="pp-logo lz">L</span> Lazada</label>
+        </div>
+
+        <label>Nama Toko</label>
+        <input type="text" name="shopName" placeholder="contoh: Infarm Bandung" required />
+
+        <div class="form-2col">
+          <div>
+            <label>App ID / Partner ID</label>
+            <input type="text" name="appId" placeholder="1029384756" required />
+          </div>
+          <div>
+            <label>App Secret / Key</label>
+            <input type="password" name="appSecret" placeholder="••••••••••••" required />
+          </div>
+        </div>
+
+        <label>Webhook URL (otomatis)</label>
+        <div class="webhook-row">
+          <input type="text" id="webhookUrl" value="https://cs.infarm.id/api/webhook/shopee" readonly />
+          <button type="button" class="copy-btn" id="copyWebhook">Salin</button>
+        </div>
+
+        <label class="check-row"><input type="checkbox" checked /> Aktifkan balasan otomatis AI (sesuai claude.md)</label>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" id="modalCancel">Batal</button>
+          <button type="submit" class="btn-primary">Hubungkan Toko</button>
+        </div>
+      </form>
+
+      <div class="modal-success" id="modalSuccess" hidden>
+        <div class="success-ill">✅</div>
+        <p id="successText">Toko berhasil dihubungkan!</p>
+        <button class="btn-primary" id="successClose">Selesai</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script>window.INFARM_DASHBOARD = true;</script>
+  <script src="rail.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>

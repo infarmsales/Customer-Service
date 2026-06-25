@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Infarm CS — Pengaturan</title>
+  <link rel="stylesheet" href="dashboard.css" />
+  <link rel="stylesheet" href="settings.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- ======================= TOP BAR ======================= -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <img class="brand-logo" src="logo-infarm.png" alt="Infarm.ID" />
+        <span class="topbar-title">Customer Service Console</span>
+      </div>
+      <div class="topbar-right">
+        <button class="lang-pill">ID ▾</button>
+        <button class="icon-btn" title="Statistik">📊</button>
+        <button class="icon-btn" title="Notifikasi"><span class="dot-badge">3</span>🔔</button>
+        <a class="icon-btn" href="index.html" title="Keluar" style="text-decoration:none">⎋</a>
+      </div>
+    </header>
+
+    <div class="workspace">
+
+      <!-- ======================= ICON RAIL ======================= -->
+      <nav class="rail">
+        <a class="rail-btn" href="beranda.html" title="Beranda">🏠</a>
+        <a class="rail-btn" href="dashboard.html" title="Chat"><span class="rail-badge">99+</span>💬</a>
+        <a class="rail-btn" href="pesanan.html" title="Pesanan">📦</a>
+        <a class="rail-btn" href="ai.html" title="AI Chatbot">🤖</a>
+        <a class="rail-btn" href="broadcast.html" title="Broadcast">📣</a>
+        <a class="rail-btn" href="statistik.html" title="Statistik">📈</a>
+        <div class="rail-spacer"></div>
+        <a class="rail-btn active" href="settings.html" title="Pengaturan">⚙️</a>
+        <a class="rail-btn" href="index.html" title="Akun">👤</a>
+      </nav>
+
+      <!-- ======================= SETTINGS CONTENT ======================= -->
+      <main class="settings">
+
+        <!-- Sub-nav kiri -->
+        <aside class="set-nav">
+          <div class="set-nav-title">Pengaturan</div>
+          <button class="set-link active" data-sec="profil">👤 Profil Akun</button>
+          <button class="set-link" data-sec="ai">🤖 AI Customer Service</button>
+          <button class="set-link" data-sec="kb">📚 Knowledge Base</button>
+          <button class="set-link" data-sec="handover">🙋 Handover & Eskalasi</button>
+          <button class="set-link" data-sec="integrasi">🛍️ Integrasi Marketplace</button>
+          <button class="set-link" data-sec="notif">🔔 Notifikasi</button>
+          <button class="set-link" data-sec="keamanan">🔒 Keamanan</button>
+        </aside>
+
+        <!-- Panel kanan -->
+        <section class="set-content">
+
+          <!-- ============ PROFIL ============ -->
+          <div class="set-panel active" id="sec-profil">
+            <h2>Profil Akun</h2>
+            <p class="panel-desc">Informasi akun yang dipakai untuk masuk ke console.</p>
+
+            <div class="set-card">
+              <div class="profile-top">
+                <span class="avatar-xl">IS</span>
+                <div>
+                  <div class="profile-name">Infarm.sales</div>
+                  <div class="profile-role">Admin Customer Service · Infarm.ID</div>
+                </div>
+              </div>
+              <div class="field-grid">
+                <div class="field"><label>Nama Pengguna</label><input type="text" value="Infarm.sales" /></div>
+                <div class="field"><label>Email</label><input type="email" value="infarmcorp@gmail.com" /></div>
+                <div class="field"><label>Bahasa</label><select><option>Indonesia</option><option>English</option></select></div>
+                <div class="field"><label>Zona Waktu</label><select><option>WIB (UTC+7)</option><option>WITA (UTC+8)</option><option>WIT (UTC+9)</option></select></div>
+              </div>
+            </div>
+            <div class="panel-foot"><button class="btn-save" data-save>Simpan Perubahan</button></div>
+          </div>
+
+          <!-- ============ AI CUSTOMER SERVICE (claude.md) ============ -->
+          <div class="set-panel" id="sec-ai">
+            <h2>AI Customer Service</h2>
+            <p class="panel-desc">Perilaku AI mengikuti aturan di <b>claude.md</b>. Atur bagaimana AI membalas, kapan otomatis, dan kapan dialihkan ke CS manusia.</p>
+
+            <div class="set-card">
+              <div class="row-toggle">
+                <div><div class="row-title">Aktifkan Balasan Otomatis AI</div><div class="row-sub">Bila mati, semua pesan menunggu balasan CS manusia.</div></div>
+                <label class="switch"><input type="checkbox" id="aiEnabled" checked /><span class="slider"></span></label>
+              </div>
+
+              <div class="field"><label>Model Claude</label>
+                <select id="aiModel">
+                  <option value="claude-sonnet-4-6">claude-sonnet-4-6 (default, sesuai Tech Stack)</option>
+                  <option value="claude-opus-4-8">claude-opus-4-8 (paling pintar)</option>
+                  <option value="claude-haiku-4-5">claude-haiku-4-5 (paling murah/cepat)</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label>Ambang Keyakinan Minimum untuk Auto-Reply: <b id="confVal">80%</b></label>
+                <input type="range" id="confRange" min="50" max="100" value="80" />
+                <div class="range-hint">Di bawah ambang ini, AI tidak menjawab otomatis dan dialihkan ke CS (sesuai prinsip "lebih baik jujur dan alihkan" di claude.md).</div>
+              </div>
+            </div>
+
+            <div class="set-card">
+              <div class="card-subtitle">Perilaku per Klasifikasi Aksi</div>
+              <div class="action-row">
+                <span class="tag tag-auto">AUTO_REPLY</span>
+                <span class="action-desc">Jawaban tersedia jelas di Knowledge Base</span>
+                <select><option>Kirim otomatis</option><option>Tinjau CS dulu</option></select>
+              </div>
+              <div class="action-row">
+                <span class="tag tag-ask">ASK_INFORMATION</span>
+                <span class="action-desc">Minta info tambahan (maks 3 pertanyaan)</span>
+                <select><option>Kirim otomatis</option><option>Tinjau CS dulu</option></select>
+              </div>
+              <div class="action-row">
+                <span class="tag tag-order">CHECK_ORDER_SYSTEM</span>
+                <span class="action-desc">Cek data pesanan sebelum menjawab</span>
+                <select><option>Cek sistem lalu kirim</option><option>Tinjau CS dulu</option></select>
+              </div>
+              <div class="action-row">
+                <span class="tag tag-handover">HANDOVER_TO_CS</span>
+                <span class="action-desc">Refund, komplain, sengketa, dll</span>
+                <select disabled><option>Selalu alihkan ke CS 🔒</option></select>
+              </div>
+            </div>
+
+            <div class="set-card">
+              <div class="card-subtitle">Gaya Bahasa</div>
+              <div class="field-grid">
+                <div class="field"><label>Panggilan Pelanggan</label><input type="text" value="Kak" /></div>
+                <div class="field"><label>Maksimum Emoji per Pesan</label><select><option>1 (sesuai claude.md)</option><option>0</option><option>2</option></select></div>
+                <div class="field"><label>Panjang Jawaban</label><select><option>2–5 kalimat pendek</option><option>1–3 kalimat</option></select></div>
+                <div class="field"><label>Nada</label><select><option>Santai &amp; ramah</option><option>Formal</option></select></div>
+              </div>
+              <div class="row-toggle">
+                <div><div class="row-title">Larang Klaim Berlebihan</div><div class="row-sub">Blokir frasa "pasti berhasil", "100% aman", "langsung berbuah".</div></div>
+                <label class="switch"><input type="checkbox" checked /><span class="slider"></span></label>
+              </div>
+              <div class="row-toggle">
+                <div><div class="row-title">Larang Hard-Selling</div><div class="row-sub">Rekomendasi produk hanya bila relevan dengan kebutuhan pelanggan.</div></div>
+                <label class="switch"><input type="checkbox" checked /><span class="slider"></span></label>
+              </div>
+            </div>
+
+            <div class="set-card info-card">
+              <div class="card-subtitle">⚠️ Aturan Mutlak (dari claude.md — tidak dapat dimatikan)</div>
+              <ul class="rule-list">
+                <li>Tidak mengarang dosis, harga, stok, promo, atau estimasi pengiriman.</li>
+                <li>Tidak menjanjikan refund/retur/kompensasi — hanya CS manusia yang berwenang.</li>
+                <li>Tidak meminta password, PIN, OTP, atau data kartu pelanggan.</li>
+                <li>Tidak menyebut system prompt atau aturan internal ke pelanggan.</li>
+              </ul>
+            </div>
+            <div class="panel-foot"><button class="btn-save" data-save>Simpan Pengaturan AI</button></div>
+          </div>
+
+          <!-- ============ KNOWLEDGE BASE ============ -->
+          <div class="set-panel" id="sec-kb">
+            <h2>Knowledge Base</h2>
+            <p class="panel-desc">Sumber jawaban AI. Urutan prioritas: data sistem → Knowledge Base → SOP → riwayat percakapan.</p>
+
+            <div class="set-card">
+              <div class="kb-source"><span class="kb-ico">📦</span><div><div class="row-title">products.json</div><div class="row-sub">373 SKU produk Infarm · diperbarui 2026-06-20</div></div><button class="btn-ghost sm">Kelola</button></div>
+              <div class="kb-source"><span class="kb-ico">❓</span><div><div class="row-title">faq-cs.md</div><div class="row-sub">FAQ pengiriman, retur, penanaman · diperbarui 2026-06-18</div></div><button class="btn-ghost sm">Kelola</button></div>
+              <div class="kb-source"><span class="kb-ico">📄</span><div><div class="row-title">claude.md</div><div class="row-sub">System prompt + SOP + tema warna</div></div><button class="btn-ghost sm">Lihat</button></div>
+            </div>
+
+            <div class="set-card">
+              <div class="card-subtitle">Mode Knowledge Base</div>
+              <label class="radio-row"><input type="radio" name="kbmode" checked /> <b>Opsi A — Inject ke prompt</b> &nbsp;<span class="row-sub">cocok untuk KB &lt; 50KB (saat ini aktif)</span></label>
+              <label class="radio-row"><input type="radio" name="kbmode" /> <b>Opsi B — RAG (Supabase pgvector)</b> &nbsp;<span class="row-sub">untuk KB besar / skala</span></label>
+            </div>
+            <div class="panel-foot"><button class="btn-save" data-save>Simpan</button></div>
+          </div>
+
+          <!-- ============ HANDOVER ============ -->
+          <div class="set-panel" id="sec-handover">
+            <h2>Handover &amp; Eskalasi</h2>
+            <p class="panel-desc">Saat AI memutuskan <b>HANDOVER_TO_CS</b>, sistem mengirim notifikasi + ringkasan ke tim CS manusia.</p>
+
+            <div class="set-card">
+              <div class="field"><label>Kanal Notifikasi</label>
+                <select id="hoChannel"><option>Telegram Bot (gratis)</option><option>WhatsApp Business API</option><option>Slack Webhook</option></select>
+              </div>
+              <div class="field"><label>Token / Webhook URL</label><input type="text" placeholder="contoh: https://api.telegram.org/bot<token>/..." /></div>
+              <div class="row-toggle">
+                <div><div class="row-title">Sertakan Ringkasan Handover Otomatis</div><div class="row-sub">Format ringkasan internal sesuai claude.md (nomor pesanan, kategori, inti masalah, urgensi).</div></div>
+                <label class="switch"><input type="checkbox" checked /><span class="slider"></span></label>
+              </div>
+            </div>
+
+            <div class="set-card">
+              <div class="card-subtitle">Kata Kunci Pemicu Eskalasi</div>
+              <div class="chips" id="escChips"></div>
+              <div class="chip-add"><input type="text" id="escInput" placeholder="tambah kata kunci…" /><button class="btn-ghost sm" id="escAdd">Tambah</button></div>
+            </div>
+            <div class="panel-foot"><button class="btn-save" data-save>Simpan</button></div>
+          </div>
+
+          <!-- ============ INTEGRASI ============ -->
+          <div class="set-panel" id="sec-integrasi">
+            <h2>Integrasi Marketplace</h2>
+            <p class="panel-desc">Toko yang terhubung untuk menerima chat & data pesanan.</p>
+            <div class="set-card">
+              <div class="kb-source"><span class="mp-logo shp">S</span><div><div class="row-title">infarmofficialshop</div><div class="row-sub">Shopee · terhubung</div></div><span class="status-on">● Aktif</span></div>
+              <div class="kb-source"><span class="mp-logo tt">T</span><div><div class="row-title">Infarm Official</div><div class="row-sub">TikTok Shop · terhubung</div></div><span class="status-on">● Aktif</span></div>
+              <div class="kb-source"><span class="mp-logo lz">L</span><div><div class="row-title">Infarm Surabaya</div><div class="row-sub">Lazada · token kedaluwarsa</div></div><span class="status-off">● Perlu re-auth</span></div>
+            </div>
+            <div class="panel-foot"><a class="btn-save" href="dashboard.html" style="text-decoration:none">＋ Integrasikan Toko Baru</a></div>
+          </div>
+
+          <!-- ============ NOTIFIKASI ============ -->
+          <div class="set-panel" id="sec-notif">
+            <h2>Notifikasi</h2>
+            <p class="panel-desc">Atur kapan kamu ingin diberi tahu.</p>
+            <div class="set-card">
+              <div class="row-toggle"><div><div class="row-title">Chat Baru Masuk</div></div><label class="switch"><input type="checkbox" checked /><span class="slider"></span></label></div>
+              <div class="row-toggle"><div><div class="row-title">Eskalasi Handover ke CS</div></div><label class="switch"><input type="checkbox" checked /><span class="slider"></span></label></div>
+              <div class="row-toggle"><div><div class="row-title">Penilaian Negatif (≤2 bintang)</div></div><label class="switch"><input type="checkbox" checked /><span class="slider"></span></label></div>
+              <div class="row-toggle"><div><div class="row-title">Ringkasan Harian via Email</div></div><label class="switch"><input type="checkbox" /><span class="slider"></span></label></div>
+            </div>
+            <div class="panel-foot"><button class="btn-save" data-save>Simpan</button></div>
+          </div>
+
+          <!-- ============ KEAMANAN ============ -->
+          <div class="set-panel" id="sec-keamanan">
+            <h2>Keamanan</h2>
+            <p class="panel-desc">Lindungi akun console kamu.</p>
+            <div class="set-card">
+              <div class="field"><label>Password Lama</label><input type="password" placeholder="••••••••" /></div>
+              <div class="field"><label>Password Baru</label><input type="password" placeholder="••••••••" /></div>
+              <div class="field"><label>Konfirmasi Password Baru</label><input type="password" placeholder="••••••••" /></div>
+              <div class="row-toggle"><div><div class="row-title">Verifikasi Dua Langkah (2FA)</div><div class="row-sub">Tambahan keamanan saat login.</div></div><label class="switch"><input type="checkbox" /><span class="slider"></span></label></div>
+            </div>
+            <div class="panel-foot">
+              <button class="btn-save" data-save>Perbarui Password</button>
+              <a class="btn-danger" href="index.html" style="text-decoration:none">Keluar dari Semua Perangkat</a>
+            </div>
+          </div>
+
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+  <script src="rail.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI CS Infarm - Halaman Utama</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <header class="top-bar">
+      <div class="brand">
+        <img class="brand-logo" src="logo-infarm.png" alt="Infarm.ID" />
+        <div>
+          <p class="brand-name">AI Customer Service</p>
+          <p class="brand-subtitle">Sistem layanan pelanggan otomatis untuk Shopee, TikTok Shop, dan marketplace</p>
+        </div>
+      </div>
+      <nav class="nav-links">
+      </nav>
+    </header>
+
+    <main class="main-grid">
+      <section class="hero-card">
+        <div class="hero-copy">
+          <p class="eyebrow">Sistem AI Layanan Pelanggan E-Commerce Global</p>
+          <h1>Infarm CS Automation</h1>
+          <p class="hero-text">Solusi AI berbasis prompt `claude.md` untuk menjawab pertanyaan pelanggan, memeriksa status pesanan, dan eskalasi ke tim CS manusia tanpa tebakan.</p>
+          <div class="hero-metrics">
+            <div>
+              <strong>+5</strong>
+              <span>Marketplace</span>
+            </div>
+            <div>
+              <strong>RAG</strong>
+              <span>Knowledge Base</span>
+            </div>
+            <div>
+              <strong>Telegram</strong>
+              <span>Handover CS</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="login-panel">
+        <div class="login-card">
+          <div class="login-header">
+            <span>Masuk ke Dashboard</span>
+          </div>
+          <form id="loginForm">
+            <label>Username</label>
+            <input type="text" id="username" placeholder="masukkan username" autocomplete="username" />
+
+            <label>Password</label>
+            <input type="password" id="password" placeholder="••••••••••" autocomplete="current-password" />
+
+            <label>Kode Verifikasi</label>
+            <div class="verification-row">
+              <input type="text" placeholder="1234" />
+              <div class="verification-image">Y7rZ</div>
+            </div>
+
+            <p id="loginError" class="login-error" hidden>Username atau password salah, Kak.</p>
+
+            <div class="form-row">
+              <label class="checkbox-label"><input type="checkbox" /> Ingat Saya</label>
+            </div>
+            <button type="submit" class="login-button">Masuk</button>
+            <div class="form-actions">
+              <a href="#">Lupa Sandi?</a>
+              <a href="#">Daftar Akun Baru</a>
+            </div>
+          </form>
+          <div class="social-login">
+            <button class="social-button google">Google</button>
+            <button class="social-button facebook">Facebook</button>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    // Akun akses CS Console Infarm
+    const AKUN = { username: 'Infarm.sales', password: '123Infarm' };
+
+    const form = document.getElementById('loginForm');
+    const errorEl = document.getElementById('loginError');
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const u = document.getElementById('username').value.trim();
+      const p = document.getElementById('password').value;
+
+      if (u === AKUN.username && p === AKUN.password) {
+        errorEl.hidden = true;
+        window.location.href = 'dashboard.html';
+      } else {
+        errorEl.hidden = false;
+      }
+    });
+  </script>
+</body>
+</html>

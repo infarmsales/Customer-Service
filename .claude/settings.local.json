@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Start-Process \"c:\\\\Users\\\\User\\\\Downloads\\\\CS AI PROJECT\\\\pesanan.html\")",
+      "PowerShell(Start-Process \"c:\\\\Users\\\\User\\\\Downloads\\\\CS AI PROJECT\\\\ai.html\")",
+      "PowerShell(Start-Process \"c:\\\\Users\\\\User\\\\Downloads\\\\CS AI PROJECT\\\\broadcast.html\")"
+    ]
+  }
+}

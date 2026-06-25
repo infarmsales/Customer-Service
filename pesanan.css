@@ -1,0 +1,197 @@
+/* ===========================================================
+   Infarm CS — Halaman Pesanan. Melengkapi dashboard.css.
+   3 sub-halaman: Penilaian, Pengembalian Dana, Dibatalkan.
+   =========================================================== */
+
+.rail-btn { display: grid; place-items: center; text-decoration: none; color: #fff; }
+
+.pesanan {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--page-bg);
+}
+
+/* ---- Sub-tab header ---- */
+.subtabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+.subtab {
+  border: none;
+  background: transparent;
+  padding: 16px 14px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--text-2);
+  cursor: pointer;
+  white-space: nowrap;
+  border-bottom: 3px solid transparent;
+}
+.subtab:hover { color: var(--green-dark); }
+.subtab.active { color: var(--green-dark); border-bottom-color: var(--green); }
+.subtab.muted { color: var(--muted); }
+.st-count { color: var(--green); font-weight: 800; }
+.st-count.gray { color: var(--muted); }
+.subtab-div { width: 1px; height: 22px; background: var(--border); margin: 0 6px; }
+
+/* ---- Panels ---- */
+.panel { display: none; padding: 16px 20px 28px; }
+.panel.active { display: block; }
+
+/* ---- Filter rows ---- */
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.filter-row.sub { margin-bottom: 10px; }
+
+.platform-tabs { display: flex; gap: 4px; }
+.pt {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 9px;
+  padding: 7px 14px;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  font-size: 0.86rem;
+}
+.pt b { color: var(--green); margin-left: 3px; }
+.pt.active { background: var(--green-mint); color: var(--green-dark); border-color: var(--green); }
+
+.search-field.sm { width: 240px; padding: 7px 10px; }
+.scope-select.sm { padding: 6px 8px; font-size: 0.82rem; }
+
+.link-btn { border: none; background: transparent; color: var(--muted); cursor: pointer; font-weight: 600; }
+.link-btn:hover { color: var(--green-dark); }
+
+/* ---- Chip tabs (bintang / status) ---- */
+.chip-tabs { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+.chip {
+  border: none;
+  background: transparent;
+  padding: 7px 12px;
+  border-radius: 9px;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  font-size: 0.86rem;
+}
+.chip b { color: var(--green); margin-left: 3px; }
+.chip:hover { background: var(--green-soft); }
+.chip.active { background: var(--green-mint); color: var(--green-dark); }
+
+.check-inline { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text-2); cursor: pointer; font-size: 0.86rem; }
+.check-inline input { accent-color: var(--green); }
+
+.btn-ghost.sm { padding: 7px 14px; font-size: 0.84rem; border-radius: 9px; }
+.btn-blue {
+  border: none;
+  background: var(--green);
+  color: #fff;
+  border-radius: 9px;
+  padding: 8px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.84rem;
+}
+.btn-blue:hover { background: var(--green-hover); }
+
+/* ---- Catatan AI ---- */
+.ai-note {
+  background: var(--green-soft);
+  border: 1px solid var(--green-mint);
+  border-left: 3px solid var(--green);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  color: var(--text-2);
+  margin-bottom: 14px;
+}
+.ai-note b { color: var(--green-dark); }
+
+/* ---- Tabel data ---- */
+.table-wrap {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+.data-table thead th {
+  text-align: left;
+  background: var(--green-soft);
+  color: var(--text-2);
+  font-weight: 700;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.data-table tbody td { padding: 14px 16px; border-bottom: 1px solid var(--border-soft); vertical-align: top; }
+.data-table tbody tr:hover { background: var(--green-soft); }
+.data-table tbody tr.order-head td { background: #fafdfb; padding: 10px 16px; }
+
+/* Info produk */
+.prod-cell { display: flex; gap: 10px; }
+.prod-thumb { width: 44px; height: 44px; border-radius: 10px; background: var(--green-mint); display: grid; place-items: center; font-size: 1.3rem; flex-shrink: 0; }
+.prod-name { font-weight: 600; line-height: 1.4; max-width: 200px; }
+.prod-sku { color: var(--muted); font-size: 0.78rem; margin-top: 4px; }
+.order-no { color: var(--green-dark); font-weight: 700; }
+
+/* Rating bintang */
+.rating-list { display: flex; flex-direction: column; gap: 4px; }
+.rating-line { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.rating-label { color: var(--text-2); font-size: 0.8rem; }
+.stars { color: #d1d5db; letter-spacing: 1px; white-space: nowrap; }
+.stars .on { color: #f59e0b; }
+
+.review-content { max-width: 220px; color: var(--text-2); line-height: 1.5; }
+.review-date { color: var(--muted); font-size: 0.76rem; margin-top: 6px; }
+
+.buyer { color: var(--muted); }
+.buyer b { color: var(--text); }
+
+/* Status pill */
+.pill { display: inline-block; font-size: 0.74rem; font-weight: 700; padding: 3px 9px; border-radius: 8px; white-space: nowrap; }
+.pill.wait { background: #fef3c7; color: #92400e; }
+.pill.done { background: var(--green-mint); color: var(--green-dark); }
+.pill.cancel { background: #fee2e2; color: #b91c1c; }
+.pill.refund { background: #dbeafe; color: #1e40af; }
+
+/* Tag tindakan AI (claude.md) */
+.tag { font-size: 0.66rem; font-weight: 800; padding: 3px 7px; border-radius: 6px; white-space: nowrap; }
+.tag-handover { background: #fee2e2; color: #b91c1c; }
+.tag-order { background: #dbeafe; color: #1e40af; }
+.tag-auto { background: var(--green-mint); color: var(--green-dark); }
+
+/* Aksi */
+.act-links { display: flex; flex-direction: column; gap: 4px; }
+.act-link { color: var(--green-dark); font-weight: 600; cursor: pointer; font-size: 0.82rem; background: none; border: none; text-align: left; padding: 0; }
+.act-link:hover { text-decoration: underline; }
+
+/* ---- Empty state ---- */
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 70px 20px; color: var(--muted); }
+.empty-state .empty-ill { font-size: 3rem; opacity: 0.35; }
+
+/* ---- Foot / pagination ---- */
+.table-foot { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 14px 4px; font-size: 0.84rem; color: var(--text-2); }
+.table-foot b { color: var(--text); }
+.pager { display: flex; align-items: center; gap: 6px; }
+.page-input { width: 42px; border: 1px solid var(--border); border-radius: 8px; padding: 5px 8px; text-align: center; }
+
+/* ---- Responsiveness ---- */
+@media (max-width: 1100px) {
+  .filter-row { gap: 8px; }
+  .search-field.sm { width: 180px; }
+}

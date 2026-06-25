@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Infarm CS — AI Chatbot</title>
+  <link rel="stylesheet" href="dashboard.css" />
+  <link rel="stylesheet" href="ai.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- ======================= TOP BAR ======================= -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <img class="brand-logo" src="logo-infarm.png" alt="Infarm.ID" />
+        <span class="topbar-title">Customer Service Console</span>
+      </div>
+      <div class="topbar-right">
+        <button class="lang-pill">ID ▾</button>
+        <button class="icon-btn" title="Statistik">📊</button>
+        <button class="icon-btn" title="Notifikasi"><span class="dot-badge">3</span>🔔</button>
+        <a class="icon-btn" href="index.html" title="Keluar" style="text-decoration:none">⎋</a>
+      </div>
+    </header>
+
+    <div class="workspace">
+
+      <!-- ======================= ICON RAIL ======================= -->
+      <nav class="rail">
+        <a class="rail-btn" href="beranda.html" title="Beranda">🏠</a>
+        <a class="rail-btn" href="dashboard.html" title="Chat"><span class="rail-badge">99+</span>💬</a>
+        <a class="rail-btn" href="pesanan.html" title="Pesanan">📦</a>
+        <a class="rail-btn active" href="ai.html" title="AI Chatbot">🤖</a>
+        <a class="rail-btn" href="broadcast.html" title="Broadcast">📣</a>
+        <a class="rail-btn" href="statistik.html" title="Statistik">📈</a>
+        <div class="rail-spacer"></div>
+        <a class="rail-btn" href="settings.html" title="Pengaturan">⚙️</a>
+        <a class="rail-btn" href="index.html" title="Akun">👤</a>
+      </nav>
+
+      <!-- ======================= AI CONTENT ======================= -->
+      <main class="ai">
+        <div class="ai-tabbar">
+          <button class="ai-tab active">AI Chatbot</button>
+        </div>
+
+        <div class="ai-grid">
+
+          <!-- Kolom kiri: statistik -->
+          <aside class="ai-stats">
+            <div class="stat-card">
+              <div class="stat-ico">📈</div>
+              <div class="stat-pct">15%</div>
+              <div class="stat-label">Tingkatkan Tingkat Konversi Pesanan</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-ico">💬</div>
+              <div class="stat-pct">75%</div>
+              <div class="stat-label">Tingkat Resolusi Konsultasi Pra Jual & Purna Jual</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-ico">🧑‍🌾</div>
+              <div class="stat-pct">30%</div>
+              <div class="stat-label">Menghemat Tenaga Kerja CS</div>
+            </div>
+          </aside>
+
+          <!-- Kolom tengah: hub fitur -->
+          <section class="ai-hero">
+            <h1>Layanan Pelanggan AI Cerdas</h1>
+            <p class="ai-sub">Ditenagai <b>Claude</b> dengan system prompt <b>claude.md</b> — menjawab akurat, jujur, dan tahu kapan harus dialihkan ke CS manusia.</p>
+            <div class="ai-cta">
+              <button class="btn-ghost">Beli Paket Tambahan AI</button>
+              <a class="btn-blue" href="#coba">Coba Balasan AI ›</a>
+            </div>
+
+            <div class="hub">
+              <!-- fitur kiri -->
+              <div class="feat-col left">
+                <div class="feat">
+                  <div class="feat-txt">
+                    <div class="feat-title">Paket Bahasa Cerdas</div>
+                    <div class="feat-desc">Memahami bahasa pelanggan & mengidentifikasi 100+ jenis masalah pembeli.</div>
+                  </div>
+                  <div class="feat-ico">🌐</div>
+                </div>
+                <div class="feat">
+                  <div class="feat-txt">
+                    <div class="feat-title">Pembelajaran Personalisasi</div>
+                    <div class="feat-desc">Belajar dari gaya balasan CS Infarm agar jawaban konsisten dengan brand.</div>
+                  </div>
+                  <div class="feat-ico">🎨</div>
+                </div>
+                <div class="feat">
+                  <div class="feat-txt">
+                    <div class="feat-title">Identifikasi Emosi <span class="tag tag-handover">HANDOVER_TO_CS</span></div>
+                    <div class="feat-desc">Mendeteksi pelanggan marah / ulasan buruk lalu mengalihkan ke CS manusia.</div>
+                  </div>
+                  <div class="feat-ico">😟</div>
+                </div>
+              </div>
+
+              <!-- pusat -->
+              <div class="hub-core">
+                <div class="ring r3"></div>
+                <div class="ring r2"></div>
+                <div class="ring r1"></div>
+                <div class="core-bubble">🤖</div>
+              </div>
+
+              <!-- fitur kanan -->
+              <div class="feat-col right">
+                <div class="feat">
+                  <div class="feat-ico">💡</div>
+                  <div class="feat-txt">
+                    <div class="feat-title">Balasan Cerdas <span class="tag tag-auto">AUTO_REPLY</span></div>
+                    <div class="feat-desc">Menjawab dari Knowledge Base (dosis, cara pakai, FAQ) tanpa mengarang.</div>
+                  </div>
+                </div>
+                <div class="feat">
+                  <div class="feat-ico">🛒</div>
+                  <div class="feat-txt">
+                    <div class="feat-title">Rekomendasi Produk</div>
+                    <div class="feat-desc">Menyarankan produk Infarm hanya bila relevan dengan kebutuhan pelanggan.</div>
+                  </div>
+                </div>
+                <div class="feat">
+                  <div class="feat-ico">📦</div>
+                  <div class="feat-txt">
+                    <div class="feat-title">Cek Pesanan <span class="tag tag-order">CHECK_ORDER_SYSTEM</span></div>
+                    <div class="feat-desc">Mengambil status resi & pembayaran dari sistem sebelum menjawab.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ai-toggle-bar">
+              <label class="switch-row">
+                <span>Aktifkan Rekomendasi Balasan AI</span>
+                <span class="switch"><input type="checkbox" id="aiOn" checked /><span class="slider"></span></span>
+              </label>
+              <span class="toggle-hint">Status backend: <b id="backendStatus">memeriksa…</b></span>
+            </div>
+          </section>
+        </div>
+
+        <!-- ======================= COBA BALASAN AI (Claude API) ======================= -->
+        <section class="coba-card" id="coba">
+          <div class="coba-head">
+            <h2>🤖 Coba Balasan AI</h2>
+            <span class="coba-sub">Ketik pesan pelanggan → AI mengklasifikasikan tindakan & menyusun balasan sesuai <b>claude.md</b>.</span>
+          </div>
+
+          <div class="coba-body">
+            <div class="coba-input">
+              <textarea id="custMsg" placeholder="Contoh: Dosis POC Buah buat tomat berapa ya kak?" rows="4"></textarea>
+              <div class="coba-samples">
+                <button class="sample">Dosis POC Buah buat tomat berapa ya kak?</button>
+                <button class="sample">Paket saya belum sampai, sudah 7 hari</button>
+                <button class="sample">Daun cabai saya menguning kenapa ya?</button>
+                <button class="sample">Resi pesanan 240620 sudah update belum?</button>
+              </div>
+              <button class="btn-blue lg" id="askBtn">Minta Balasan AI ✨</button>
+            </div>
+
+            <div class="coba-output" id="output" hidden>
+              <div class="out-head">
+                <span class="out-label">Tindakan AI:</span>
+                <span class="tag" id="outTag">AUTO_REPLY</span>
+                <span class="out-meta" id="outMeta"></span>
+              </div>
+              <div class="out-reply" id="outReply"></div>
+              <div class="out-actions">
+                <button class="act-link" id="copyReply">Salin balasan</button>
+              </div>
+            </div>
+            <div class="coba-placeholder" id="placeholder">
+              <div class="ph-ill">💬</div>
+              <p>Balasan AI akan muncul di sini.</p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+  <script src="rail.js"></script>
+  <script src="ai.js"></script>
+</body>
+</html>

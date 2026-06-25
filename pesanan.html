@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Infarm CS — Pesanan</title>
+  <link rel="stylesheet" href="dashboard.css" />
+  <link rel="stylesheet" href="pesanan.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- ======================= TOP BAR ======================= -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <img class="brand-logo" src="logo-infarm.png" alt="Infarm.ID" />
+        <span class="topbar-title">Customer Service Console</span>
+      </div>
+      <div class="topbar-right">
+        <button class="lang-pill">ID ▾</button>
+        <button class="icon-btn" title="Statistik">📊</button>
+        <button class="icon-btn" title="Notifikasi"><span class="dot-badge">3</span>🔔</button>
+        <a class="icon-btn" href="index.html" title="Keluar" style="text-decoration:none">⎋</a>
+      </div>
+    </header>
+
+    <div class="workspace">
+
+      <!-- ======================= ICON RAIL ======================= -->
+      <nav class="rail">
+        <a class="rail-btn" href="beranda.html" title="Beranda">🏠</a>
+        <a class="rail-btn" href="dashboard.html" title="Chat"><span class="rail-badge">99+</span>💬</a>
+        <a class="rail-btn active" href="pesanan.html" title="Pesanan">📦</a>
+        <a class="rail-btn" href="ai.html" title="AI Chatbot">🤖</a>
+        <a class="rail-btn" href="broadcast.html" title="Broadcast">📣</a>
+        <a class="rail-btn" href="statistik.html" title="Statistik">📈</a>
+        <div class="rail-spacer"></div>
+        <a class="rail-btn" href="settings.html" title="Pengaturan">⚙️</a>
+        <a class="rail-btn" href="index.html" title="Akun">👤</a>
+      </nav>
+
+      <!-- ======================= PESANAN CONTENT ======================= -->
+      <main class="pesanan">
+
+        <!-- Sub-tab header -->
+        <div class="subtabs">
+          <button class="subtab active" data-tab="penilaian">Pengelolaan Penilaian <span class="st-count">13</span></button>
+          <button class="subtab" data-tab="refund">Pesanan Pengembalian Dana <span class="st-count">40</span></button>
+          <button class="subtab" data-tab="cancel">Pesanan Dibatalkan <span class="st-count">5</span></button>
+        </div>
+
+        <!-- ============ PANEL 1: PENGELOLAAN PENILAIAN ============ -->
+        <section class="panel active" id="panel-penilaian">
+          <div class="filter-row">
+            <div class="platform-tabs">
+              <button class="pt active">Lazada <b>8</b></button>
+              <button class="pt">Shopee <b>5</b></button>
+              <button class="pt">TikTok</button>
+              <button class="pt">Mercado</button>
+            </div>
+            <select class="scope-select"><option>Seluruh Toko</option><option>infarm</option><option>infarmofficialshop</option></select>
+            <select class="scope-select"><option>Penilaian Produk</option><option>Penilaian Toko</option></select>
+            <select class="scope-select"><option>Nomor Pesanan</option><option>Nama Pembeli</option></select>
+            <div class="search-field sm"><span class="search-ico">🔍</span><input placeholder="Klik 2 Kali untuk Pencarian Massal" /></div>
+            <button class="mini-btn" title="Filter">⧩</button>
+            <button class="link-btn">Reset</button>
+          </div>
+
+          <div class="filter-row sub">
+            <div class="chip-tabs" id="starTabs">
+              <button class="chip active" data-star="all">Semua</button>
+              <button class="chip" data-star="5">5 Bintang <b>1</b></button>
+              <button class="chip" data-star="4">4 Bintang <b>0</b></button>
+              <button class="chip" data-star="3">3 Bintang <b>1</b></button>
+              <button class="chip" data-star="2">2 Bintang <b>4</b></button>
+              <button class="chip" data-star="1">1 Bintang <b>2</b></button>
+            </div>
+            <label class="check-inline"><input type="checkbox" id="negOnly" /> Hanya melihat penilaian negatif</label>
+            <button class="btn-ghost sm">Ekspor</button>
+            <button class="btn-blue">Sinkronisasi Penilaian</button>
+          </div>
+
+          <!-- Catatan AI dari claude.md -->
+          <div class="ai-note">🤖 Sesuai SOP <b>claude.md</b>: penilaian negatif (≤2 bintang) disarankan dibalas empati & ditindaklanjuti. Balasan AI tersedia di kolom Aksi.</div>
+
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Informasi Produk</th>
+                  <th>Penilaian</th>
+                  <th>Konten Penilaian ⇅</th>
+                  <th>Konten Balasan ⇅</th>
+                  <th>Catatan</th>
+                  <th>Penandaan</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="reviewBody"><!-- diisi JS --></tbody>
+            </table>
+            <div class="empty-state" id="reviewEmpty" hidden>
+              <div class="empty-ill">📦</div><p>Tidak Ada Data</p>
+            </div>
+          </div>
+
+          <div class="table-foot">
+            <span>Total <b id="reviewTotal">8</b></span>
+            <select class="scope-select sm"><option>10/laman</option><option>20/laman</option></select>
+            <span class="pager">Pergi ke <input class="page-input" value="1" /></span>
+          </div>
+        </section>
+
+        <!-- ============ PANEL 2: PENGEMBALIAN DANA (REFUND) ============ -->
+        <section class="panel" id="panel-refund">
+          <div class="filter-row">
+            <div class="platform-tabs">
+              <button class="pt active">Lazada</button>
+              <button class="pt">Shopee <b>26</b></button>
+              <button class="pt">TikTok <b>14</b></button>
+            </div>
+            <select class="scope-select"><option>Seluruh Toko</option></select>
+            <select class="scope-select"><option>Jenis Pengembalian</option><option>Barang Rusak</option><option>Tidak Sampai</option></select>
+            <select class="scope-select"><option>Warna Catatan</option></select>
+            <select class="scope-select"><option>Nomor Pesanan</option></select>
+            <div class="search-field sm"><span class="search-ico">🔍</span><input placeholder="Klik 2 Kali untuk Pencarian Massal" /></div>
+            <button class="mini-btn" title="Filter">⧩</button>
+            <button class="link-btn">Reset</button>
+          </div>
+
+          <div class="filter-row sub">
+            <div class="chip-tabs" data-group="refund">
+              <button class="chip active" data-status="all">Semua <b>10</b></button>
+              <button class="chip" data-status="baru">Pengajuan Baru <b>0</b></button>
+              <button class="chip" data-status="kembali">Sedang Dikembalikan <b>0</b></button>
+              <button class="chip" data-status="proses">Sedang Diproses <b>0</b></button>
+              <button class="chip" data-status="dana">Pengembalian Dana <b>7</b></button>
+              <button class="chip" data-status="batal">Sudah Dibatalkan <b>3</b></button>
+            </div>
+            <button class="btn-ghost sm">Ekspor</button>
+            <button class="btn-blue">Sinkronisasi</button>
+          </div>
+
+          <div class="ai-note">🤖 Sesuai <b>claude.md</b>: permintaan refund / barang rusak / tidak sampai wajib <b>HANDOVER_TO_CS</b> — AI tidak menjanjikan refund, hanya meneruskan + ringkasan.</div>
+
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr><th>Nomor Pesanan</th><th>Produk</th><th>Jenis Pengembalian</th><th>Nominal</th><th>Status</th><th>Tindakan AI</th><th>Aksi</th></tr>
+              </thead>
+              <tbody id="refundBody"><!-- diisi JS --></tbody>
+            </table>
+            <div class="empty-state" id="refundEmpty" hidden>
+              <div class="empty-ill">📦</div><p>Tidak Ada Data</p>
+            </div>
+          </div>
+
+          <div class="table-foot">
+            <span>Total <b id="refundTotal">7</b></span>
+            <select class="scope-select sm"><option>10/laman</option></select>
+            <span class="pager">Pergi ke <input class="page-input" value="1" /></span>
+          </div>
+        </section>
+
+        <!-- ============ PANEL 3: PESANAN DIBATALKAN (CANCEL) ============ -->
+        <section class="panel" id="panel-cancel">
+          <div class="filter-row">
+            <div class="platform-tabs">
+              <button class="pt active">Lazada</button>
+              <button class="pt">Shopee <b>5</b></button>
+              <button class="pt">TikTok</button>
+            </div>
+            <select class="scope-select"><option>Seluruh Toko</option></select>
+            <select class="scope-select"><option>Warna Catatan</option></select>
+            <select class="scope-select"><option>Nomor Pesanan</option></select>
+            <div class="search-field sm"><span class="search-ico">🔍</span><input placeholder="Klik 2 Kali untuk Pencarian Massal" /></div>
+            <button class="mini-btn" title="Filter">⧩</button>
+          </div>
+
+          <div class="filter-row sub">
+            <div class="chip-tabs" data-group="cancel">
+              <button class="chip active" data-status="all">Semua <b>91</b></button>
+              <button class="chip" data-status="menunggu">Menunggu Diproses <b>0</b></button>
+              <button class="chip" data-status="proses">Sudah Diproses <b>12</b></button>
+              <button class="chip" data-status="batal">Sudah Dibatalkan <b>79</b></button>
+            </div>
+            <button class="btn-ghost sm">Ekspor</button>
+          </div>
+
+          <div class="ai-note">🤖 Sesuai <b>claude.md</b>: pembatalan pesanan termasuk kategori yang dialihkan ke CS manusia (<b>HANDOVER_TO_CS</b> / cek <b>CHECK_ORDER_SYSTEM</b>).</div>
+
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr><th>Nomor Pesanan</th><th>Produk</th><th>Alasan Pembatalan</th><th>Nominal</th><th>Status</th><th>Tindakan AI</th><th>Aksi</th></tr>
+              </thead>
+              <tbody id="cancelBody"><!-- diisi JS --></tbody>
+            </table>
+            <div class="empty-state" id="cancelEmpty" hidden>
+              <div class="empty-ill">📦</div><p>Tidak Ada Data</p>
+            </div>
+          </div>
+
+          <div class="table-foot">
+            <span>Total <b id="cancelTotal">12</b></span>
+            <select class="scope-select sm"><option>10/laman</option></select>
+            <span class="pager">Pergi ke <input class="page-input" value="1" /></span>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+  <script src="rail.js"></script>
+  <script src="pesanan.js"></script>
+</body>
+</html>

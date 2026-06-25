@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Infarm CS — Statistik</title>
+  <link rel="stylesheet" href="dashboard.css" />
+  <link rel="stylesheet" href="statistik.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- ======================= TOP BAR ======================= -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <img class="brand-logo" src="logo-infarm.png" alt="Infarm.ID" />
+        <span class="topbar-title">Customer Service Console</span>
+      </div>
+      <div class="topbar-right">
+        <button class="lang-pill">ID ▾</button>
+        <button class="icon-btn" title="Statistik">📊</button>
+        <button class="icon-btn" title="Notifikasi"><span class="dot-badge">3</span>🔔</button>
+        <a class="icon-btn" href="index.html" title="Keluar" style="text-decoration:none">⎋</a>
+      </div>
+    </header>
+
+    <div class="workspace">
+
+      <!-- ======================= ICON RAIL ======================= -->
+      <nav class="rail">
+        <a class="rail-btn" href="beranda.html" title="Beranda">🏠</a>
+        <a class="rail-btn" href="dashboard.html" title="Chat"><span class="rail-badge">99+</span>💬</a>
+        <a class="rail-btn" href="pesanan.html" title="Pesanan">📦</a>
+        <a class="rail-btn" href="ai.html" title="AI Chatbot">🤖</a>
+        <a class="rail-btn" href="broadcast.html" title="Broadcast">📣</a>
+        <a class="rail-btn active" href="statistik.html" title="Statistik">📈</a>
+        <div class="rail-spacer"></div>
+        <a class="rail-btn" href="settings.html" title="Pengaturan">⚙️</a>
+        <a class="rail-btn" href="index.html" title="Akun">👤</a>
+      </nav>
+
+      <!-- ======================= STATISTIK CONTENT ======================= -->
+      <main class="stat">
+
+        <div class="stat-headbar">
+          <div>
+            <h1>Analisa Layanan Pelanggan & Konversi Penjualan</h1>
+          </div>
+          <div class="stat-filter">
+            <div class="date-tabs" id="rangeTabs">
+              <button class="dt" data-range="today">Hari Ini</button>
+              <button class="dt active" data-range="7d">7 Hari</button>
+              <button class="dt" data-range="30d">30 Hari</button>
+            </div>
+            <select class="scope-select"><option>Semua Marketplace</option><option>Shopee</option><option>TikTok Shop</option><option>Lazada</option></select>
+            <button class="btn-ghost sm">Ekspor</button>
+          </div>
+        </div>
+
+        <!-- ===== KPI cards ===== -->
+        <div class="kpi-grid">
+          <div class="kpi"><div class="kpi-ico">💬</div><div class="kpi-num" id="kpiSesi">—</div><div class="kpi-label">Total Sesi Percakapan</div><div class="kpi-trend up" id="kpiSesiT"></div></div>
+          <div class="kpi"><div class="kpi-ico">⚡</div><div class="kpi-num" id="kpiAuto">—</div><div class="kpi-label">Tingkat Auto-Reply</div><div class="kpi-trend up" id="kpiAutoT"></div></div>
+          <div class="kpi"><div class="kpi-ico">⏱️</div><div class="kpi-num" id="kpiResp">—</div><div class="kpi-label">Rata-rata Waktu Respons</div><div class="kpi-trend down" id="kpiRespT"></div></div>
+          <div class="kpi"><div class="kpi-ico">🙋</div><div class="kpi-num" id="kpiHo">—</div><div class="kpi-label">Tingkat Handover ke CS</div><div class="kpi-trend down" id="kpiHoT"></div></div>
+          <div class="kpi"><div class="kpi-ico">🛒</div><div class="kpi-num" id="kpiKonv">—</div><div class="kpi-label">Konversi Chat → Order</div><div class="kpi-trend up" id="kpiKonvT"></div></div>
+          <div class="kpi"><div class="kpi-ico">💰</div><div class="kpi-num" id="kpiRev">—</div><div class="kpi-label">Estimasi Pendapatan dari Chat</div><div class="kpi-trend up" id="kpiRevT"></div></div>
+        </div>
+
+        <!-- ===== Baris: donut klasifikasi + tren bar ===== -->
+        <div class="stat-row two">
+          <section class="card">
+            <div class="card-head"><h2>Distribusi Klasifikasi Aksi</h2><span class="card-note">sesuai claude.md</span></div>
+            <div class="donut-wrap">
+              <div class="donut" id="donut"><div class="donut-hole"><span id="donutCenter">—</span><small>total sesi</small></div></div>
+              <ul class="donut-legend" id="donutLegend"></ul>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-head"><h2>Tren Volume Percakapan</h2><div class="legend-mini"><span><i class="d c1"></i>AI selesai</span><span><i class="d c2"></i>Handover CS</span></div></div>
+            <div class="bars" id="trendBars"></div>
+            <div class="bars-axis" id="trendAxis"></div>
+          </section>
+        </div>
+
+        <!-- ===== Funnel konversi penjualan ===== -->
+        <section class="card">
+          <div class="card-head"><h2>Funnel Konversi Penjualan dari Chat</h2><span class="card-note">mendukung penjualan tanpa memaksa (claude.md)</span></div>
+          <div class="sales-funnel" id="salesFunnel"></div>
+        </section>
+
+        <!-- ===== Baris: alasan handover + top produk ===== -->
+        <div class="stat-row two">
+          <section class="card">
+            <div class="card-head"><h2>Alasan Handover ke CS Manusia</h2></div>
+            <div class="hbars" id="hoReasons"></div>
+          </section>
+
+          <section class="card">
+            <div class="card-head"><h2>Produk Paling Sering Ditanyakan</h2></div>
+            <div class="hbars" id="topProducts"></div>
+          </section>
+        </div>
+
+        <!-- ===== Tabel performa per marketplace ===== -->
+        <section class="card">
+          <div class="card-head"><h2>Performa per Marketplace</h2></div>
+          <div class="table-wrap">
+            <table class="stat-table">
+              <thead>
+                <tr><th>Marketplace</th><th>Sesi</th><th>Auto-Reply</th><th>Handover CS</th><th>Konversi</th><th>Pendapatan</th></tr>
+              </thead>
+              <tbody id="mpBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="rail.js"></script>
+  <script src="statistik.js"></script>
+</body>
+</html>

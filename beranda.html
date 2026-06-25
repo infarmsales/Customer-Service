@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Infarm CS — Beranda</title>
+  <link rel="stylesheet" href="dashboard.css" />
+  <link rel="stylesheet" href="beranda.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- ======================= TOP BAR ======================= -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <img class="brand-logo" src="logo-infarm.png" alt="Infarm.ID" />
+        <span class="topbar-title">Customer Service Console</span>
+      </div>
+      <div class="topbar-search">
+        <select class="scope-select"><option>Seluruh Toko</option><option>infarmofficialshop</option><option>Infarm Yogyakarta</option></select>
+        <select class="scope-select"><option>Semua Layanan Pelanggan</option><option>AUTO_REPLY</option><option>HANDOVER_TO_CS</option></select>
+      </div>
+      <div class="topbar-right">
+        <button class="lang-pill">ID ▾</button>
+        <button class="icon-btn" title="Statistik">📊</button>
+        <button class="icon-btn" title="Notifikasi"><span class="dot-badge">3</span>🔔</button>
+        <a class="icon-btn" href="index.html" title="Keluar" style="text-decoration:none">⎋</a>
+      </div>
+    </header>
+
+    <div class="workspace">
+
+      <!-- ======================= ICON RAIL ======================= -->
+      <nav class="rail">
+        <a class="rail-btn active" href="beranda.html" title="Beranda">🏠</a>
+        <a class="rail-btn" href="dashboard.html" title="Chat"><span class="rail-badge">99+</span>💬</a>
+        <a class="rail-btn" href="pesanan.html" title="Pesanan">📦</a>
+        <a class="rail-btn" href="ai.html" title="AI Chatbot">🤖</a>
+        <a class="rail-btn" href="broadcast.html" title="Broadcast">📣</a>
+        <a class="rail-btn" href="statistik.html" title="Statistik">📈</a>
+        <div class="rail-spacer"></div>
+        <a class="rail-btn" href="settings.html" title="Pengaturan">⚙️</a>
+        <a class="rail-btn" href="index.html" title="Akun">👤</a>
+      </nav>
+
+      <!-- ======================= HOME CONTENT ======================= -->
+      <main class="home">
+
+        <!-- Baris atas: Integrasi Toko + Akun -->
+        <div class="home-top">
+          <section class="card integrasi">
+            <div class="card-head"><h2>Integrasi Toko</h2><a class="card-link" href="dashboard.html">Kelola ›</a></div>
+            <div class="platforms">
+              <a class="platform" href="dashboard.html"><span class="pf-badge">1</span><span class="pf-ico lz">🛍️</span><span class="pf-name">Lazada</span></a>
+              <a class="platform" href="dashboard.html"><span class="pf-badge">15</span><span class="pf-ico shp">🛒</span><span class="pf-name">Shopee</span></a>
+              <a class="platform" href="dashboard.html"><span class="pf-badge">3</span><span class="pf-ico tt">🎵</span><span class="pf-name">TikTok</span></a>
+              <a class="platform muted" href="dashboard.html"><span class="pf-ico off">🛒</span><span class="pf-name">Tokopedia</span></a>
+              <a class="platform muted" href="dashboard.html"><span class="pf-ico off">🌐</span><span class="pf-name">Blibli</span></a>
+              <a class="platform muted" href="dashboard.html"><span class="pf-ico fb">f</span><span class="pf-name">Facebook</span></a>
+            </div>
+          </section>
+
+          <aside class="card akun">
+            <div class="akun-head">
+              <div>
+                <div class="akun-mail">Infarm.sales</div>
+                <div class="akun-sub">Sisa Kuota Balasan AI: <b>29.000</b></div>
+                <div class="akun-sub">Berlaku s.d. 2026-06-25 <span class="warn-pill">1 hari</span></div>
+              </div>
+              <span class="vip">VIP1</span>
+            </div>
+            <button class="upgrade-btn">Beli / Tingkatkan Segera</button>
+            <div class="quick-title">Navigasi Cepat</div>
+            <div class="quick-grid">
+              <a class="quick-btn" href="dashboard.html">⚡ Balasan Cepat</a>
+              <a class="quick-btn" href="dashboard.html">📌 Follow Up Pesan</a>
+              <a class="quick-btn" href="dashboard.html">📣 Pesan Broadcast</a>
+            </div>
+          </aside>
+        </div>
+
+        <!-- Data Real Time -->
+        <section class="card">
+          <div class="card-head">
+            <h2>Data Real Time</h2>
+            <span class="updated">Waktu Diperbarui: 2026-06-24 15:43 (UTC+7) ⟳</span>
+          </div>
+          <div class="realtime-grid">
+            <div class="rt-item">
+              <div class="rt-label">Membutuhkan balasan ⓘ</div>
+              <div class="rt-num danger">48</div>
+            </div>
+            <div class="rt-item">
+              <div class="rt-label">Menunggu Diproses ⓘ</div>
+              <div class="rt-num">98</div>
+            </div>
+            <div class="rt-item">
+              <div class="rt-label">Perlu Handover ke CS ⓘ</div>
+              <div class="rt-num warn">7</div>
+            </div>
+            <div class="rt-item">
+              <div class="rt-label">Waktu respons rata-rata ⓘ</div>
+              <div class="rt-num small">1 menit 12 detik</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Ringkasan Data Pesan -->
+        <section class="card">
+          <div class="card-head">
+            <h2>Ringkasan Data Pesan</h2>
+            <div class="date-tabs">
+              <button class="dt active">Kemarin</button>
+              <button class="dt">7 Hari Terakhir</button>
+              <span class="date-range">2026-06-23 — 2026-06-23</span>
+            </div>
+          </div>
+
+          <div class="ringkasan-grid">
+            <!-- Funnel klasifikasi (claude.md) -->
+            <div class="funnel">
+              <div class="funnel-step f1">
+                <span class="fs-label">Sesi Percakapan Masuk</span>
+                <span class="fs-num">635</span>
+              </div>
+              <div class="funnel-conv">
+                <span>Dijawab Otomatis AI</span>
+                <b class="up">75,75%</b>
+              </div>
+              <div class="funnel-step f2">
+                <span class="fs-label">Diselesaikan AI</span>
+                <span class="fs-num">481</span>
+              </div>
+              <div class="funnel-conv">
+                <span>Dialihkan ke CS</span>
+                <b class="down">4,9%</b>
+              </div>
+              <div class="funnel-step f3">
+                <span class="fs-label">Handover ke CS</span>
+                <span class="fs-num">31</span>
+              </div>
+            </div>
+
+            <!-- Kartu metrik: 4 klasifikasi aksi claude.md -->
+            <div class="metric-cards">
+              <div class="metric"><div class="m-top"><span>AUTO_REPLY</span><span class="trend up">▲ 14,17%</span></div><div class="m-num">481</div><div class="m-sub">Dijawab otomatis dari Knowledge Base</div></div>
+              <div class="metric"><div class="m-top"><span>ASK_INFORMATION</span><span class="trend up">▲ 8,40%</span></div><div class="m-num">86</div><div class="m-sub">Minta info tambahan ke pelanggan</div></div>
+              <div class="metric"><div class="m-top"><span>CHECK_ORDER_SYSTEM</span><span class="trend up">▲ 6,20%</span></div><div class="m-num">37</div><div class="m-sub">Cek status pesanan ke sistem</div></div>
+              <div class="metric"><div class="m-top"><span>HANDOVER_TO_CS</span><span class="trend down">▼ 4,90%</span></div><div class="m-num">31</div><div class="m-sub">Dialihkan ke CS manusia</div></div>
+              <div class="metric"><div class="m-top"><span>Persentase Auto-Reply</span><span class="trend up">▲ 10,66%</span></div><div class="m-num">75,75%</div><div class="m-sub">Sesi tuntas tanpa CS manusia</div></div>
+              <div class="metric"><div class="m-top"><span>Jumlah Pembeli Dilayani</span><span class="trend up">▲ 17,16%</span></div><div class="m-num">580</div><div class="m-sub">Pelanggan unik 1 hari</div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Data Penilaian -->
+        <section class="card">
+          <div class="card-head"><h2>Data Penilaian</h2><div class="date-tabs"><button class="dt active">Kemarin</button><button class="dt">7 Hari Terakhir</button></div></div>
+          <div class="penilaian-grid">
+            <div class="penilaian-box">
+              <div class="pb-title">Kepuasan Pelanggan <a class="card-link" href="#">Lihat Lainnya ›</a></div>
+              <div class="donut-wrap">
+                <div class="donut"><div class="donut-hole"></div></div>
+                <ul class="donut-legend">
+                  <li><span class="lg-dot pos"></span> Ulasan Positif <b>98,72%</b></li>
+                  <li><span class="lg-dot neg"></span> Ulasan Negatif <b>1,28%</b></li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="penilaian-box">
+              <div class="pb-title">Pengingat Penilaian Positif</div>
+              <div class="mini-funnel">
+                <div class="mf-step mf1"><span>Pengingat Dikirim</span><b>120</b></div>
+                <div class="mf-step mf2"><span>Penilaian Positif Masuk</span><b>96</b></div>
+                <div class="mf-conv">Berhasil <b class="up">80%</b></div>
+              </div>
+            </div>
+
+            <div class="penilaian-box">
+              <div class="pb-title">Pemulihan Penilaian Negatif</div>
+              <div class="mini-funnel">
+                <div class="mf-step mf1"><span>Follow-up Dikirim</span><b>15</b></div>
+                <div class="mf-step mf2"><span>Berhasil Dipulihkan</span><b>9</b></div>
+                <div class="mf-conv">Pemulihan <b class="up">60%</b></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Tren Data Pesan -->
+        <section class="card">
+          <div class="card-head"><h2>Tren Data Pesan</h2><div class="date-tabs"><button class="dt">Kemarin</button><button class="dt active">7 Hari Terakhir</button></div></div>
+          <div class="chart-legend">
+            <span><i class="lg-dot c1"></i> Pembeli Konsultasi</span>
+            <span><i class="lg-dot c2"></i> Sesi Diselesaikan AI</span>
+            <span><i class="lg-dot c3"></i> % Auto-Reply</span>
+          </div>
+          <div class="bars" id="bars"><!-- diisi oleh script --></div>
+          <div class="bars-axis" id="barsAxis"><!-- tanggal --></div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="rail.js"></script>
+  <script>
+    // Data tren 7 hari (mock) — Pembeli, Sesi AI, % Auto-Reply
+    const TREN = [
+      { d: '06-18', a: 410, b: 320, p: 74 },
+      { d: '06-19', a: 480, b: 372, p: 76 },
+      { d: '06-20', a: 520, b: 405, p: 77 },
+      { d: '06-21', a: 390, b: 300, p: 73 },
+      { d: '06-22', a: 560, b: 441, p: 78 },
+      { d: '06-23', a: 635, b: 481, p: 75 },
+      { d: '06-24', a: 470, b: 360, p: 76 },
+    ];
+    const max = Math.max(...TREN.map(t => t.a));
+    const bars = document.getElementById('bars');
+    const axis = document.getElementById('barsAxis');
+    TREN.forEach(t => {
+      const g = document.createElement('div');
+      g.className = 'bar-group';
+      g.innerHTML =
+        `<div class="bar c1" style="height:${(t.a / max * 100).toFixed(0)}%" title="Konsultasi: ${t.a}"></div>` +
+        `<div class="bar c2" style="height:${(t.b / max * 100).toFixed(0)}%" title="Sesi AI: ${t.b}"></div>` +
+        `<div class="bar c3" style="height:${(t.p / 100 * 100).toFixed(0)}%" title="Auto-Reply: ${t.p}%"></div>`;
+      bars.appendChild(g);
+      const ax = document.createElement('span');
+      ax.textContent = t.d;
+      axis.appendChild(ax);
+    });
+  </script>
+</body>
+</html>
