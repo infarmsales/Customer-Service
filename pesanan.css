@@ -180,6 +180,45 @@
 .act-link { color: var(--green-dark); font-weight: 600; cursor: pointer; font-size: 0.82rem; background: none; border: none; text-align: left; padding: 0; }
 .act-link:hover { text-decoration: underline; }
 
+/* ---- Bilah aksi massal (Pesanan Dibatalkan) ---- */
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--green-soft);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+.bulk-check { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text-2); cursor: pointer; font-size: 0.86rem; }
+.bulk-check input { accent-color: var(--green); width: 16px; height: 16px; }
+.bulk-count { font-size: 0.82rem; color: var(--muted); }
+.bulk-spacer { flex: 1; }
+.btn-approve, .btn-reject {
+  border: none;
+  border-radius: 9px;
+  padding: 9px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.84rem;
+}
+.btn-approve { background: var(--green); color: #fff; }
+.btn-approve:hover { background: var(--green-hover); }
+.btn-reject { background: #fff; color: #b91c1c; border: 1px solid #fecaca; }
+.btn-reject:hover { background: #fee2e2; }
+.btn-approve:disabled, .btn-reject:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.col-check { width: 36px; }
+.row-check { accent-color: var(--green); width: 16px; height: 16px; }
+.pill.cont { background: #dbeafe; color: #1e40af; }
+
+.row-actions { display: flex; flex-direction: column; gap: 4px; }
+.mini-approve, .mini-reject { background: none; border: none; cursor: pointer; font-weight: 600; font-size: 0.82rem; text-align: left; padding: 0; }
+.mini-approve { color: var(--green-dark); }
+.mini-reject { color: #b91c1c; }
+.mini-approve:hover, .mini-reject:hover { text-decoration: underline; }
+
 /* ---- Empty state ---- */
 .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 70px 20px; color: var(--muted); }
 .empty-state .empty-ill { font-size: 3rem; opacity: 0.35; }

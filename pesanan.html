@@ -179,19 +179,28 @@
           <div class="filter-row sub">
             <div class="chip-tabs" data-group="cancel">
               <button class="chip active" data-status="all">Semua <b>91</b></button>
-              <button class="chip" data-status="menunggu">Menunggu Diproses <b>0</b></button>
+              <button class="chip" data-status="menunggu">Menunggu Diproses <b>6</b></button>
               <button class="chip" data-status="proses">Sudah Diproses <b>12</b></button>
               <button class="chip" data-status="batal">Sudah Dibatalkan <b>79</b></button>
             </div>
             <button class="btn-ghost sm">Ekspor</button>
           </div>
 
-          <div class="ai-note">🤖 Sesuai <b>claude.md</b>: pembatalan pesanan termasuk kategori yang dialihkan ke CS manusia (<b>HANDOVER_TO_CS</b> / cek <b>CHECK_ORDER_SYSTEM</b>).</div>
+          <div class="ai-note">🤖 Sesuai <b>claude.md</b>: AI hanya meneruskan permintaan pembatalan (<b>HANDOVER_TO_CS</b>). Keputusan <b>Setujui</b> (pesanan dibatalkan) atau <b>Tolak</b> (pesanan dilanjutkan) dilakukan oleh CS manusia.</div>
+
+          <!-- Bilah aksi massal -->
+          <div class="bulk-bar">
+            <label class="bulk-check"><input type="checkbox" id="cancelAll" /> Pilih Semua</label>
+            <span class="bulk-count" id="bulkCount">0 dipilih</span>
+            <span class="bulk-spacer"></span>
+            <button class="btn-approve" id="bulkApprove">✓ Setujui Massal — Batalkan Pesanan</button>
+            <button class="btn-reject" id="bulkReject">✕ Tolak Massal — Lanjutkan Pesanan</button>
+          </div>
 
           <div class="table-wrap">
             <table class="data-table">
               <thead>
-                <tr><th>Nomor Pesanan</th><th>Produk</th><th>Alasan Pembatalan</th><th>Nominal</th><th>Status</th><th>Tindakan AI</th><th>Aksi</th></tr>
+                <tr><th class="col-check"></th><th>Nomor Pesanan</th><th>Produk</th><th>Alasan Pembatalan</th><th>Nominal</th><th>Status</th><th>Tindakan AI</th><th>Aksi</th></tr>
               </thead>
               <tbody id="cancelBody"><!-- diisi JS --></tbody>
             </table>

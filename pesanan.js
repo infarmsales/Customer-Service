@@ -118,11 +118,26 @@ const REFUNDS = [
 ];
 
 // ---------- Data: Pesanan Dibatalkan ----------
+// status: menunggu (perlu keputusan CS) | proses | batal
 const CANCELS = [
-  { order: '2933110298471552', prod: 'INFARM - Benih Melon Sunmelo', alasan: 'Pembeli berubah pikiran', nominal: 'Rp 24.000', status: 'proses', s: 'done', label: 'Sudah Diproses' },
-  { order: '2940872215098633', prod: 'INFARM - Planter Bag 50 Liter', alasan: 'Stok kosong', nominal: 'Rp 45.000', status: 'proses', s: 'done', label: 'Sudah Diproses' },
-  { order: '2951200938471002', prod: 'INFARM - Sekop Taman Besi', alasan: 'Resi tidak diinput', nominal: 'Rp 19.000', status: 'batal', s: 'cancel', label: 'Sudah Dibatalkan' },
+  { order: '2933110298471552', prod: 'INFARM - Benih Melon Sunmelo', alasan: 'Pembeli berubah pikiran', nominal: 'Rp 24.000', status: 'menunggu' },
+  { order: '2940872215098633', prod: 'INFARM - Planter Bag 50 Liter', alasan: 'Salah pilih varian', nominal: 'Rp 45.000', status: 'menunggu' },
+  { order: '2951200938471002', prod: 'INFARM - Sekop Taman Besi', alasan: 'Ingin ganti alamat kirim', nominal: 'Rp 19.000', status: 'menunggu' },
+  { order: '2962887120554390', prod: 'INFARM - POC Buah 250 ml', alasan: 'Pengiriman terlalu lama', nominal: 'Rp 32.000', status: 'menunggu' },
+  { order: '2974102938120017', prod: 'INFARM - Paket Hidroponik 12 Lubang', alasan: 'Pembeli minta batal', nominal: 'Rp 165.000', status: 'menunggu' },
+  { order: '2988120394857201', prod: 'INFARM - Polybag 35x35 isi 30', alasan: 'Stok kosong di gudang', nominal: 'Rp 28.000', status: 'menunggu' },
+  { order: '2901338475610284', prod: 'INFARM - Furadan 3GR 1 Kg', alasan: 'Sudah dikirim ulang', nominal: 'Rp 78.000', status: 'proses' },
+  { order: '2911200948571123', prod: 'INFARM - Benih Cabai Micha', alasan: 'Pembeli berubah pikiran', nominal: 'Rp 16.000', status: 'batal' },
 ];
+
+const CANCEL_STATUS = {
+  menunggu: { s: 'wait',   label: 'Menunggu Diproses' },
+  proses:   { s: 'done',   label: 'Sudah Diproses' },
+  batal:    { s: 'cancel', label: 'Sudah Dibatalkan' },
+};
+// Hitungan chip (gaya dashboard); menunggu mengikuti data nyata.
+const cancelCount = { all: 91, menunggu: 6, proses: 12, batal: 79 };
+let cancelStatus = 'all';
 
 function renderRefunds(status = 'all') {
   const rows = REFUNDS.filter((r) => status === 'all' || r.status === status);
@@ -141,21 +156,78 @@ function renderRefunds(status = 'all') {
   $('#refundTotal').textContent = rows.length;
 }
 
-function renderCancels(status = 'all') {
+function renderCancels(status = cancelStatus) {
+  cancelStatus = status;
   const rows = CANCELS.filter((r) => status === 'all' || r.status === status);
   const body = $('#cancelBody');
-  body.innerHTML = rows.map((r) => `
-    <tr>
+  body.innerHTML = rows.map((r) => {
+    const pending = r.status === 'menunggu';
+    const meta = CANCEL_STATUS[r.status];
+    const label = r.note || meta.label;
+    const cls = r.note ? 'cont' : meta.s;
+    const check = pending ? `<input type="checkbox" class="row-check" data-order="${r.order}" />` : '';
+    const actions = pending
+      ? `<div class="row-actions">
+           <button class="mini-approve" data-approve="${r.order}">✓ Setujui (Batalkan)</button>
+           <button class="mini-reject" data-reject="${r.order}">✕ Tolak (Lanjutkan)</button>
+         </div>`
+      : `<button class="act-link">Detail</button>`;
+    return `<tr>
+      <td class="col-check">${check}</td>
       <td><span class="order-no">${r.order}</span></td>
       <td><div class="prod-name">${r.prod}</div></td>
       <td>${r.alasan}</td>
       <td>${r.nominal}</td>
-      <td><span class="pill ${r.s}">${r.label}</span></td>
+      <td><span class="pill ${cls}">${label}</span></td>
       <td><span class="tag tag-order">CHECK_ORDER_SYSTEM</span></td>
-      <td><button class="act-link">Detail</button></td>
-    </tr>`).join('');
+      <td>${actions}</td>
+    </tr>`;
+  }).join('');
   $('#cancelEmpty').hidden = rows.length > 0;
   $('#cancelTotal').textContent = rows.length;
+
+  // listener checkbox & aksi per-baris
+  body.querySelectorAll('.row-check').forEach((c) => c.addEventListener('change', updateBulkCount));
+  body.querySelectorAll('[data-approve]').forEach((b) => b.addEventListener('click', () => decide([b.dataset.approve], 'batal')));
+  body.querySelectorAll('[data-reject]').forEach((b) => b.addEventListener('click', () => decide([b.dataset.reject], 'lanjut')));
+
+  if ($('#cancelAll')) $('#cancelAll').checked = false;
+  updateBulkCount();
+}
+
+// Hitung checkbox terpilih → update label & status tombol
+function updateBulkCount() {
+  const checked = document.querySelectorAll('#cancelBody .row-check:checked').length;
+  if ($('#bulkCount')) $('#bulkCount').textContent = `${checked} dipilih`;
+  if ($('#bulkApprove')) $('#bulkApprove').disabled = checked === 0;
+  if ($('#bulkReject')) $('#bulkReject').disabled = checked === 0;
+}
+
+// Terapkan keputusan: 'batal' (setuju → dibatalkan) / 'lanjut' (tolak → dilanjutkan)
+function decide(orders, decision) {
+  let n = 0;
+  orders.forEach((ordNo) => {
+    const r = CANCELS.find((x) => x.order === ordNo && x.status === 'menunggu');
+    if (!r) return;
+    n++;
+    cancelCount.menunggu = Math.max(0, cancelCount.menunggu - 1);
+    if (decision === 'batal') { r.status = 'batal'; r.note = null; cancelCount.batal++; }
+    else { r.status = 'proses'; r.note = 'Pesanan Dilanjutkan'; cancelCount.proses++; }
+  });
+  if (!n) return;
+  updateCancelChips();
+  renderCancels();
+  toast(decision === 'batal'
+    ? `${n} pesanan disetujui — dibatalkan`
+    : `${n} pesanan ditolak — pesanan dilanjutkan`);
+}
+
+function updateCancelChips() {
+  document.querySelectorAll('[data-group="cancel"] .chip').forEach((c) => {
+    const k = c.dataset.status;
+    const b = c.querySelector('b');
+    if (b && cancelCount[k] != null) b.textContent = cancelCount[k];
+  });
 }
 
 // ---------- Toast ----------
@@ -211,6 +283,21 @@ document.addEventListener('DOMContentLoaded', () => {
       renderCancels(c.dataset.status);
     });
   });
+
+  // Pilih semua (hanya baris pending yang punya checkbox)
+  $('#cancelAll').addEventListener('change', (e) => {
+    document.querySelectorAll('#cancelBody .row-check').forEach((c) => (c.checked = e.target.checked));
+    updateBulkCount();
+  });
+
+  // Aksi massal: setuju (batalkan) / tolak (lanjutkan)
+  function bulkDecide(decision) {
+    const orders = [...document.querySelectorAll('#cancelBody .row-check:checked')].map((c) => c.dataset.order);
+    if (!orders.length) { toast('Pilih pesanan dulu, Kak'); return; }
+    decide(orders, decision);
+  }
+  $('#bulkApprove').addEventListener('click', () => bulkDecide('batal'));
+  $('#bulkReject').addEventListener('click', () => bulkDecide('lanjut'));
 
   // Platform tabs (visual saja)
   document.querySelectorAll('.platform-tabs').forEach((grp) => {
