@@ -632,6 +632,18 @@ html, body {
 .btn-primary { border: none; background: var(--green); color: #fff; border-radius: 12px; padding: 11px 22px; font-weight: 700; cursor: pointer; }
 .btn-primary:hover { background: var(--green-hover); }
 
+.mass-textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.9rem;
+  resize: vertical;
+  background: var(--green-soft);
+}
+.mass-textarea:focus { outline: 2px solid var(--green); background: #fff; }
+
 .modal-success { text-align: center; padding: 20px 10px 6px; }
 .modal-success[hidden] { display: none; }
 .success-ill { font-size: 3rem; }

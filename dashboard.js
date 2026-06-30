@@ -25,7 +25,7 @@ const CONVERSATIONS = [
     ],
     suggestion: 'Bisa, Kak. Untuk POC Buah Infarm, dosis resminya 2 ml per 1 liter air, diberikan seminggu sekali saat tanaman memasuki fase berbunga atau berbuah. Hindari menambah dosis agar tanaman tidak kelebihan nutrisi ya, Kak.',
     handover: { Platform: 'Shopee', Kategori: 'Konsultasi Produk', 'Inti Masalah': 'Tanya dosis POC Buah', Urgensi: 'Normal' },
-    prodQuery: 'POC Buah',
+    prodQuery: 'POC Buah', orderNo: '584590031216740091', resi: 'JX1234567890',
   },
   {
     id: 'rahma', name: 'rahmawati_id', initials: 'RW', time: '14:02', unread: false,
@@ -38,7 +38,7 @@ const CONVERSATIONS = [
     ],
     suggestion: 'Untuk tomat, POC Buah Infarm dipakai 2 ml per 1 liter air ya, Kak, disiram seminggu sekali saat fase berbunga dan berbuah. Jangan dilebihkan dosisnya supaya tanaman tidak kelebihan nutrisi.',
     handover: { Platform: 'Shopee', Kategori: 'Konsultasi Produk', 'Inti Masalah': 'Dosis POC Buah untuk tomat', Urgensi: 'Normal' },
-    prodQuery: 'tomat',
+    prodQuery: 'tomat', orderNo: '240611AB12', resi: 'JNE998877',
   },
   {
     id: 'budi', name: 'budi.santoso', initials: 'BS', time: '13:58', unread: true,
@@ -52,7 +52,7 @@ const CONVERSATIONS = [
     suggestion: 'Maaf atas kendalanya, Kak 🙏 Karena ini berkaitan dengan pesanan yang belum diterima, kasusnya perlu diperiksa langsung oleh tim CS kami. Saya bantu teruskan beserta ringkasan informasinya ya, Kak.',
     handover: { Platform: 'Shopee', Kategori: 'Komplain Pengiriman', 'Inti Masalah': 'Paket belum sampai > 7 hari', Urgensi: 'Tinggi' },
     order: { id: '240617XXXX', status: 'Dalam pengiriman', courier: 'belum update 2 hari' },
-    prodQuery: 'Furadan',
+    prodQuery: 'Furadan', orderNo: '240617XXXX', resi: 'JNT112233445',
   },
   {
     id: 'nadia', name: 'nadia.afifah', initials: 'NA', time: '13:51', unread: true,
@@ -64,7 +64,7 @@ const CONVERSATIONS = [
     ],
     suggestion: 'Boleh kirim foto tanamannya, Kak? Yang keseluruhan dan bagian bawah daunnya sekalian. Sekalian info juga produk serta dosis yang terakhir dipakai dan frekuensi penyiramannya, supaya penyebab daun menguning bisa diperiksa lebih tepat.',
     handover: { Platform: 'TikTok Shop', Kategori: 'Konsultasi Tanaman', 'Inti Masalah': 'Daun cabai menguning, data belum lengkap', Urgensi: 'Normal' },
-    prodQuery: 'cabai',
+    prodQuery: 'cabai', orderNo: '240609TT88', resi: 'SPX556677',
   },
   {
     id: 'yoga', name: 'yoga.pratama', initials: 'YP', time: '13:40', unread: false,
@@ -77,7 +77,7 @@ const CONVERSATIONS = [
     suggestion: 'Saya cek dulu status pesanannya ya, Kak. Sebentar… (sistem akan mengambil data resi untuk order 240620YYYY sebelum membalas).',
     handover: { Platform: 'TikTok Shop', Kategori: 'Status Pesanan', 'Inti Masalah': 'Minta update resi', Urgensi: 'Normal' },
     order: { id: '240620YYYY', status: 'Menunggu data sistem', courier: '—' },
-    prodQuery: 'melon',
+    prodQuery: 'melon', orderNo: '240620YYYY', resi: 'JNE220620X',
   },
   {
     id: 'sari', name: 'sari.lestari', initials: 'SL', time: '13:22', unread: false,
@@ -89,9 +89,28 @@ const CONVERSATIONS = [
     ],
     suggestion: 'Cocok, Kak. Benih melon Infarm bisa ditanam di pot/planter bag ukuran minimal 25–40 liter supaya akarnya leluasa, ditempatkan di lokasi yang kena sinar matahari penuh. Pastikan media tanamnya subur dan drainase lancar ya, Kak.',
     handover: { Platform: 'Shopee', Kategori: 'Konsultasi Produk', 'Inti Masalah': 'Tanya tanam melon di pot', Urgensi: 'Normal' },
-    prodQuery: 'melon',
+    prodQuery: 'melon', orderNo: '240605SP01', resi: 'SPX889900',
   },
 ];
+
+// ===================== Pencarian top bar (scope + massal) =====================
+const SCOPE_LABEL = {
+  nama: 'nama pembeli', pesanan: 'nomor pesanan', resi: 'nomor resi',
+  chat: 'isi chat', produk: 'nama produk',
+};
+let searchField = 'nama';   // dari dropdown #searchScope
+let searchSingle = '';      // ketik biasa
+let searchTerms = [];       // hasil pencarian massal
+
+function fieldValue(c, field) {
+  switch (field) {
+    case 'pesanan': return c.orderNo || '';
+    case 'resi': return c.resi || '';
+    case 'chat': return c.messages.map((m) => m.html).join(' ') + ' ' + c.snippet;
+    case 'produk': return c.prodQuery || '';
+    default: return c.name || '';
+  }
+}
 
 // ===================== Katalog produk (products.json) =====================
 // Sample bawaan dipakai bila products.json tidak bisa dimuat (mis. dibuka via file://).
@@ -165,6 +184,13 @@ function renderConvList(filter = 'all', search = '') {
       if (filter === 'unread' && !c.unread) return false;
       if (filter === 'cs' && c.action !== 'HANDOVER_TO_CS') return false;
       if (q && !(c.name.toLowerCase().includes(q) || c.snippet.toLowerCase().includes(q))) return false;
+      // Pencarian top bar (berdasarkan field terpilih)
+      if (searchTerms.length) {
+        const v = fieldValue(c, searchField).toLowerCase();
+        if (!searchTerms.some((t) => v.includes(t))) return false;
+      } else if (searchSingle) {
+        if (!fieldValue(c, searchField).toLowerCase().includes(searchSingle)) return false;
+      }
       return true;
     })
     .forEach((c) => {
@@ -361,8 +387,72 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // Search percakapan
+  // Search percakapan (panel)
   $('#convSearch').addEventListener('input', (e) => renderConvList(currentFilter, e.target.value));
+
+  // ===== Pencarian top bar: scope + ketik + double-click (massal) =====
+  const topSearch = $('#topSearch');
+  const scopeSel = $('#searchScope');
+
+  function applyTop() {
+    searchSingle = topSearch.value.trim().toLowerCase();
+    searchTerms = [];
+    renderConvList(currentFilter, $('#convSearch').value);
+  }
+
+  scopeSel.addEventListener('change', () => {
+    searchField = scopeSel.value;
+    searchTerms = [];
+    const isMassal = searchField === 'pesanan' || searchField === 'resi';
+    topSearch.placeholder = isMassal
+      ? `Cari ${SCOPE_LABEL[searchField]} — klik 2× untuk pencarian massal…`
+      : `Cari ${SCOPE_LABEL[searchField]}…`;
+    applyTop();
+  });
+
+  topSearch.addEventListener('input', applyTop);
+
+  // Double-click → buka pencarian massal (hanya untuk Nomor Pesanan / Resi)
+  topSearch.addEventListener('dblclick', () => {
+    if (searchField === 'pesanan' || searchField === 'resi') openMassModal();
+  });
+
+  // ===== Modal pencarian massal =====
+  function openMassModal() {
+    const isPesanan = searchField === 'pesanan';
+    $('#massTitle').textContent = isPesanan
+      ? 'Pencarian Massal — Nomor Pesanan'
+      : 'Pencarian Massal — Nomor Resi';
+    $('#massDesc').textContent = `Tempel beberapa ${isPesanan ? 'nomor pesanan' : 'nomor resi'} — satu per baris atau dipisah koma — untuk mencari banyak sekaligus (maks. 50).`;
+    $('#massInput').value = '';
+    $('#massModal').hidden = false;
+    $('#massInput').focus();
+  }
+  function closeMassModal() { $('#massModal').hidden = true; }
+
+  function doMassSearch() {
+    const raw = $('#massInput').value.split(/[\n,;]+/).map((s) => s.trim().toLowerCase()).filter(Boolean);
+    const terms = [...new Set(raw)].slice(0, 50);
+    if (!terms.length) { toast('Tempel minimal satu nomor dulu, Kak'); return; }
+    searchTerms = terms;
+    searchSingle = '';
+    // reset filter tab supaya hasil massal tampil semua
+    currentFilter = 'all';
+    document.querySelectorAll('.conv-tab').forEach((t) => t.classList.toggle('active', t.dataset.filter === 'all'));
+    renderConvList('all', '');
+    const found = CONVERSATIONS.filter((c) => {
+      const v = fieldValue(c, searchField).toLowerCase();
+      return terms.some((t) => v.includes(t));
+    }).length;
+    topSearch.value = `${terms.length} ${searchField === 'pesanan' ? 'no. pesanan' : 'resi'} dicari`;
+    closeMassModal();
+    toast(`Ditemukan ${found} percakapan dari ${terms.length} nomor`);
+  }
+
+  $('#massSearch').addEventListener('click', doMassSearch);
+  $('#massClose').addEventListener('click', closeMassModal);
+  $('#massCancel').addEventListener('click', closeMassModal);
+  $('#massModal').addEventListener('click', (e) => { if (e.target.id === 'massModal') closeMassModal(); });
 
   // Klik toko → set active
   document.querySelectorAll('.shop-item').forEach((s) => {
@@ -446,5 +536,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('#successClose').addEventListener('click', () => { closeModal(); toast('Toko baru ditambahkan ke daftar'); });
 
   // ESC tutup modal
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeModal(); closeMassModal(); } });
 });

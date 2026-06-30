@@ -16,14 +16,16 @@
         <span class="topbar-title">Customer Service Console</span>
       </div>
       <div class="topbar-search">
-        <select class="scope-select" title="Cakupan pencarian">
-          <option>Semua</option>
-          <option>Belum dibaca</option>
-          <option>Perlu CS</option>
+        <select class="scope-select" id="searchScope" title="Cari berdasarkan">
+          <option value="nama">Nama Pembeli</option>
+          <option value="pesanan">Nomor Pesanan</option>
+          <option value="resi">Nomor Resi</option>
+          <option value="chat">Isi Chat</option>
+          <option value="produk">Nama Produk</option>
         </select>
         <div class="search-field">
           <span class="search-ico">🔍</span>
-          <input type="text" placeholder="Cari no. pesanan / nama pelanggan…" />
+          <input type="text" id="topSearch" placeholder="Cari nama pembeli…" />
         </div>
       </div>
       <div class="topbar-right">
@@ -249,6 +251,22 @@
         <div class="success-ill">✅</div>
         <p id="successText">Toko berhasil dihubungkan!</p>
         <button class="btn-primary" id="successClose">Selesai</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================= MODAL: PENCARIAN MASSAL ======================= -->
+  <div class="modal-overlay" id="massModal" hidden>
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="massTitle">Pencarian Massal</h3>
+        <button class="modal-close" id="massClose" title="Tutup">✕</button>
+      </div>
+      <p class="modal-desc" id="massDesc">Tempel beberapa nomor — satu per baris atau dipisah koma — untuk mencari banyak sekaligus (maks. 50).</p>
+      <textarea id="massInput" class="mass-textarea" rows="8" placeholder="contoh:&#10;584590031216740091&#10;240617XXXX&#10;240620YYYY"></textarea>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="massCancel">Batal</button>
+        <button class="btn-primary" id="massSearch">Cari Massal</button>
       </div>
     </div>
   </div>
