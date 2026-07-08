@@ -52,6 +52,7 @@ function showForm() {
   $('#viewList').hidden = true;
   $('#viewForm').hidden = false;
   $('#formMp').textContent = MP_LABEL[currentMp];
+  resetSegmentPanel();
 }
 function showList() {
   $('#viewForm').hidden = true;
@@ -59,12 +60,105 @@ function showList() {
 }
 
 // ---------- Bantu tulis pesan (ala claude.md) ----------
-const AI_TEMPLATES = [
+const GENERIC_TEMPLATES = [
   'Halo, Kak 😊 Terima kasih sudah mampir ke toko Infarm. Lagi cari kebutuhan berkebun apa, Kak? minfarm bantu pilihkan yang paling cocok ya 🌱',
   'Hai, Kak! Kalau lagi mulai berkebun di rumah, benih & media tanam Infarm bisa jadi pilihan. Ada yang ingin ditanyakan dulu sebelum pesan, Kak? 🙏',
   'Halo, Kak 🌿 Pesanan sebelumnya semoga tumbuh subur ya. Kalau butuh nutrisi lanjutan atau bibit baru, minfarm siap bantu rekomendasikan yang sesuai kebutuhan Kakak.',
 ];
+const BELUM_ORDER_TEMPLATES = [
+  'Halo, Kak 👋 Kenalin, Infarm — perlengkapan berkebun & tanaman rumahan. Kalau lagi cari benih, pupuk, atau alat kebun, boleh mampir dulu ke toko kami ya, Kak 🌱',
+  'Hai, Kak! Baru mulai hobi berkebun di rumah? Infarm siapin benih sayur & pupuk organik yang cocok buat pemula. Ada yang mau ditanyakan dulu, Kak?',
+];
 let aiIdx = 0;
+
+// ---------- Segmentasi Pelanggan (AI) ----------
+let selectedSegmentProduct = null;
+
+function currentPenerima() {
+  const el = document.querySelector('input[name="penerima"]:checked');
+  return el ? el.value : 'penandaan';
+}
+function currentSegmen() {
+  const el = document.querySelector('input[name="segmen"]:checked');
+  return el ? el.value : 'sudah_order';
+}
+
+// Angka contoh yang konsisten per produk (bukan acak setiap render).
+// Diganti data transaksi nyata setelah integrasi API pesanan marketplace.
+function hashCount(str, min, max) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  return min + (h % (max - min + 1));
+}
+
+function updateSegmentUI() {
+  const seg = currentSegmen();
+  document.querySelectorAll('.segment-card').forEach((card) => card.classList.toggle('active', card.dataset.seg === seg));
+  $('#segmentProductPicker').hidden = seg !== 'sudah_order_produk';
+}
+
+function renderSegProducts(query) {
+  const matches = searchProducts(query, 15);
+  $('#segProdList').innerHTML = matches.map((p) => {
+    const count = hashCount(p.sku, 8, 95);
+    return `<div class="prod-card" data-sku="${p.sku}" style="cursor:pointer">
+      <div class="pc-thumb">🌱</div>
+      <div class="pc-body">
+        <div class="pc-name">${p.nama_produk}</div>
+        <div class="pc-meta"><span class="pc-sku">${p.sku}</span><span>${p.kategori || ''}</span><span>± ${count} pembeli</span></div>
+      </div>
+    </div>`;
+  }).join('') || '<div class="prod-note">Produk tidak ditemukan. Coba kata kunci lain.</div>';
+  $('#segProdContext').innerHTML = `Menampilkan <b>${matches.length}</b> hasil · ${catalogStatusText()}`;
+
+  $('#segProdList').querySelectorAll('.prod-card[data-sku]').forEach((card) => {
+    card.addEventListener('click', () => {
+      const p = PRODUCTS.find((x) => x.sku === card.dataset.sku);
+      if (p) selectSegProduct(p);
+    });
+  });
+}
+
+function selectSegProduct(p) {
+  selectedSegmentProduct = p;
+  const count = hashCount(p.sku, 8, 95);
+  const box = $('#segProdSelected');
+  box.hidden = false;
+  box.innerHTML = `🎯 Produk terpilih: <b>${p.nama_produk}</b> (± ${count} pembeli) <button type="button" id="clearSegProduct">Ganti</button>`;
+  $('#countProduk').textContent = `± ${count} pembeli`;
+  $('#clearSegProduct').addEventListener('click', clearSegProduct);
+}
+
+function clearSegProduct() {
+  selectedSegmentProduct = null;
+  $('#segProdSelected').hidden = true;
+  $('#countProduk').textContent = 'pilih produk';
+}
+
+function resetSegmentPanel() {
+  $('#segmentPanel').hidden = true;
+  document.querySelector('input[name="penerima"][value="penandaan"]').checked = true;
+  const defSeg = document.querySelector('input[name="segmen"][value="sudah_order"]');
+  if (defSeg) defSeg.checked = true;
+  clearSegProduct();
+  updateSegmentUI();
+}
+
+// Susun draf pesan AI sesuai penerima/segmen yang sedang dipilih (gaya claude.md)
+function buildAiMessage() {
+  if (currentPenerima() !== 'segmentasi') {
+    return GENERIC_TEMPLATES[aiIdx++ % GENERIC_TEMPLATES.length];
+  }
+  const seg = currentSegmen();
+  if (seg === 'belum_order') {
+    return BELUM_ORDER_TEMPLATES[aiIdx++ % BELUM_ORDER_TEMPLATES.length];
+  }
+  if (seg === 'sudah_order_produk' && selectedSegmentProduct) {
+    const nama = selectedSegmentProduct.nama_produk.replace(/^INFARM - /, '');
+    return `Halo, Kak 😊 Terima kasih sudah pernah beli ${nama} di toko kami. Kalau stok di rumah mulai menipis atau ingin restock, minfarm siap bantu ya, Kak 🌿`;
+  }
+  return GENERIC_TEMPLATES[aiIdx++ % GENERIC_TEMPLATES.length];
+}
 
 // ---------- Lampiran produk/voucher ----------
 const attached = [];
@@ -109,14 +203,25 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#taskName').addEventListener('input', (e) => $('#nameCount').textContent = `${e.target.value.length} / 50`);
   $('#msgText').addEventListener('input', (e) => $('#msgCount').textContent = `${e.target.value.length} / 500`);
 
-  // Bantu tulis AI
+  // Bantu tulis AI — menyesuaikan segmen penerima yang sedang dipilih
   $('#aiFill').addEventListener('click', () => {
-    const text = AI_TEMPLATES[aiIdx % AI_TEMPLATES.length];
-    aiIdx++;
+    const text = buildAiMessage();
     $('#msgText').value = text;
     $('#msgCount').textContent = `${text.length} / 500`;
     toast('Draf pesan AI dibuat (gaya claude.md)');
   });
+
+  // Segmentasi Pelanggan (AI)
+  document.querySelectorAll('input[name="penerima"]').forEach((r) => {
+    r.addEventListener('change', () => {
+      $('#segmentPanel').hidden = currentPenerima() !== 'segmentasi';
+    });
+  });
+  document.querySelectorAll('input[name="segmen"]').forEach((r) => {
+    r.addEventListener('change', updateSegmentUI);
+  });
+  $('#segProdSearch').addEventListener('input', (e) => renderSegProducts(e.target.value));
+  loadProducts().then(() => renderSegProducts(''));
 
   // Pilih produk / voucher
   $('#pickProduct').addEventListener('click', () => {
@@ -146,6 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
     $('#taskName').value = ''; $('#msgText').value = '';
     $('#nameCount').textContent = '0 / 50'; $('#msgCount').textContent = '0 / 500';
     attached.length = 0; renderAttached();
+    resetSegmentPanel();
     showList(); renderList();
     toast(statusLabel);
   }

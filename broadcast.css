@@ -149,6 +149,65 @@
 .pick-link { color: var(--green-dark); font-weight: 700; cursor: pointer; }
 .pick-link:hover { text-decoration: underline; }
 
+.badge-new {
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 8px;
+  letter-spacing: 0.03em;
+}
+
+/* ---- Segmentasi Pelanggan (AI) ---- */
+.segment-panel { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-soft); }
+.segment-cards { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.segment-card {
+  display: flex !important;
+  align-items: flex-start;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  cursor: pointer;
+  margin: 0 !important;
+  font-weight: 500 !important;
+  color: var(--text) !important;
+}
+.segment-card:hover { background: var(--green-soft); }
+.segment-card.active { border-color: var(--green); background: var(--green-mint); }
+.segment-card input { accent-color: var(--green); margin-top: 3px; flex-shrink: 0; }
+.segment-card .segment-ico { font-size: 1.3rem; flex-shrink: 0; }
+.segment-body { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.segment-title { font-weight: 700; font-size: 0.92rem; }
+.segment-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.45; }
+.segment-count {
+  align-self: center;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--green-dark);
+  background: #fff;
+  border: 1px solid var(--green-mint);
+  border-radius: 20px;
+  padding: 4px 12px;
+  white-space: nowrap;
+}
+
+.segment-product-picker { margin-top: 4px; margin-bottom: 14px; }
+.segment-selected {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--green-mint);
+  color: var(--green-dark);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+.segment-selected button { margin-left: auto; border: none; background: transparent; color: var(--green-dark); font-weight: 700; cursor: pointer; }
+
 /* Kotak pesan */
 .msg-box { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; max-width: 560px; position: relative; }
 .msg-box-head {

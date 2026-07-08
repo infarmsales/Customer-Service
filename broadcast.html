@@ -113,6 +113,55 @@
               <label class="radio-row"><input type="radio" name="penerima" value="penandaan" checked /> Penandaan Pembeli yang Ditentukan <a class="pick-link">Pilih</a></label>
               <label class="radio-row"><input type="radio" name="penerima" value="pesanan" /> Pesanan yang Ditentukan ⓘ</label>
               <label class="radio-row"><input type="radio" name="penerima" value="impor" /> Impor Pesanan</label>
+              <label class="radio-row"><input type="radio" name="penerima" value="segmentasi" /> Segmentasi Pelanggan (AI) <span class="badge-new">Baru</span></label>
+            </div>
+
+            <!-- Panel Segmentasi Pelanggan (AI) — muncul saat opsi di atas dipilih -->
+            <div class="segment-panel" id="segmentPanel" hidden>
+              <div class="segment-cards" id="segmentCards">
+                <label class="segment-card active" data-seg="sudah_order">
+                  <input type="radio" name="segmen" value="sudah_order" checked />
+                  <span class="segment-ico">🛒</span>
+                  <span class="segment-body">
+                    <span class="segment-title">Sudah Pernah Order</span>
+                    <span class="segment-desc">Semua pembeli yang minimal 1× checkout di toko ini — cocok untuk info restock atau promo loyalitas.</span>
+                  </span>
+                  <span class="segment-count" id="countSudahOrder">± 342 pembeli</span>
+                </label>
+
+                <label class="segment-card" data-seg="sudah_order_produk">
+                  <input type="radio" name="segmen" value="sudah_order_produk" />
+                  <span class="segment-ico">🎯</span>
+                  <span class="segment-body">
+                    <span class="segment-title">Sudah Pernah Order — Produk Tertentu</span>
+                    <span class="segment-desc">Pembeli yang pernah membeli produk spesifik — cocok untuk upsell/repurchase produk terkait.</span>
+                  </span>
+                  <span class="segment-count" id="countProduk">pilih produk</span>
+                </label>
+
+                <label class="segment-card" data-seg="belum_order">
+                  <input type="radio" name="segmen" value="belum_order" />
+                  <span class="segment-ico">🆕</span>
+                  <span class="segment-body">
+                    <span class="segment-title">Belum Pernah Order</span>
+                    <span class="segment-desc">Kontak yang pernah chat tapi belum checkout — cocok untuk promo pembuka/perkenalan produk.</span>
+                  </span>
+                  <span class="segment-count" id="countBelumOrder">± 156 kontak</span>
+                </label>
+              </div>
+
+              <!-- Pencarian produk (hanya untuk segmen "Produk Tertentu") -->
+              <div class="segment-product-picker" id="segmentProductPicker" hidden>
+                <div class="prod-search">
+                  <span class="search-ico">🔍</span>
+                  <input type="text" id="segProdSearch" placeholder="Cari produk yang pernah dibeli…" />
+                </div>
+                <div class="prod-context" id="segProdContext"></div>
+                <div class="prod-list" id="segProdList"></div>
+                <div class="segment-selected" id="segProdSelected" hidden></div>
+              </div>
+
+              <div class="ai-note">🤖 Sesuai <b>claude.md</b>: pilih segmen yang benar-benar relevan dengan isi pesan — mendukung penjualan tanpa memaksa. Perkiraan jumlah penerima masih bersifat contoh; setelah integrasi data pesanan marketplace, jumlah diambil dari transaksi nyata.</div>
             </div>
           </div>
 
@@ -162,6 +211,7 @@
 
   <div class="toast" id="toast" hidden></div>
   <script src="rail.js"></script>
+  <script src="catalog.js"></script>
   <script src="broadcast.js"></script>
 </body>
 </html>
