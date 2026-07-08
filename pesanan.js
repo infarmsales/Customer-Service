@@ -75,7 +75,7 @@ function renderReviews() {
         </div>
       </td>
       <td>
-        <div class="buyer" style="margin-bottom:8px">Nama Pembeli: <b>${r.buyer}</b></div>
+        <div class="buyer" style="margin-bottom:8px">Nama Pembeli: <b>${r.buyer}</b><button class="mini-chat-btn" data-chat="${r.order}" title="Chat ke pembeli">💬</button></div>
         <div class="rating-list">
           <div class="rating-line"><span class="rating-label">Keseluruhan</span>${stars(r.rating.all)}</div>
           <div class="rating-line"><span class="rating-label">Produk</span>${stars(r.rating.produk)}</div>
@@ -112,22 +112,22 @@ function renderReviews() {
 
 // ---------- Data: Pengembalian Dana (refund) ----------
 const REFUNDS = [
-  { order: '2901338475610284', prod: 'INFARM - Furadan 3GR 1 Kg', jenis: 'Barang Rusak / Bocor', nominal: 'Rp 78.000', status: 'dana', s: 'refund', label: 'Pengembalian Dana' },
-  { order: '2912047781200934', prod: 'INFARM - Paket Hidroponik 12 Lubang', jenis: 'Barang Tidak Sampai', nominal: 'Rp 165.000', status: 'dana', s: 'refund', label: 'Pengembalian Dana' },
-  { order: '2920551984773310', prod: 'INFARM - POC Buah 250 ml', jenis: 'Salah Kirim', nominal: 'Rp 32.000', status: 'batal', s: 'cancel', label: 'Sudah Dibatalkan' },
+  { order: '2901338475610284', buyer: 'sari.lestari', prod: 'INFARM - Furadan 3GR 1 Kg', jenis: 'Barang Rusak / Bocor', nominal: 'Rp 78.000', status: 'dana', s: 'refund', label: 'Pengembalian Dana' },
+  { order: '2912047781200934', buyer: 'budi.santoso', prod: 'INFARM - Paket Hidroponik 12 Lubang', jenis: 'Barang Tidak Sampai', nominal: 'Rp 165.000', status: 'dana', s: 'refund', label: 'Pengembalian Dana' },
+  { order: '2920551984773310', buyer: 'nadia.afifah', prod: 'INFARM - POC Buah 250 ml', jenis: 'Salah Kirim', nominal: 'Rp 32.000', status: 'batal', s: 'cancel', label: 'Sudah Dibatalkan' },
 ];
 
 // ---------- Data: Pesanan Dibatalkan ----------
 // status: menunggu (perlu keputusan CS) | proses | batal
 const CANCELS = [
-  { order: '2933110298471552', prod: 'INFARM - Benih Melon Sunmelo', alasan: 'Pembeli berubah pikiran', nominal: 'Rp 24.000', status: 'menunggu' },
-  { order: '2940872215098633', prod: 'INFARM - Planter Bag 50 Liter', alasan: 'Salah pilih varian', nominal: 'Rp 45.000', status: 'menunggu' },
-  { order: '2951200938471002', prod: 'INFARM - Sekop Taman Besi', alasan: 'Ingin ganti alamat kirim', nominal: 'Rp 19.000', status: 'menunggu' },
-  { order: '2962887120554390', prod: 'INFARM - POC Buah 250 ml', alasan: 'Pengiriman terlalu lama', nominal: 'Rp 32.000', status: 'menunggu' },
-  { order: '2974102938120017', prod: 'INFARM - Paket Hidroponik 12 Lubang', alasan: 'Pembeli minta batal', nominal: 'Rp 165.000', status: 'menunggu' },
-  { order: '2988120394857201', prod: 'INFARM - Polybag 35x35 isi 30', alasan: 'Stok kosong di gudang', nominal: 'Rp 28.000', status: 'menunggu' },
-  { order: '2901338475610284', prod: 'INFARM - Furadan 3GR 1 Kg', alasan: 'Sudah dikirim ulang', nominal: 'Rp 78.000', status: 'proses' },
-  { order: '2911200948571123', prod: 'INFARM - Benih Cabai Micha', alasan: 'Pembeli berubah pikiran', nominal: 'Rp 16.000', status: 'batal' },
+  { order: '2933110298471552', buyer: 'yoga.pratama', prod: 'INFARM - Benih Melon Sunmelo', alasan: 'Pembeli berubah pikiran', nominal: 'Rp 24.000', status: 'menunggu' },
+  { order: '2940872215098633', buyer: 'rahmawati_id', prod: 'INFARM - Planter Bag 50 Liter', alasan: 'Salah pilih varian', nominal: 'Rp 45.000', status: 'menunggu' },
+  { order: '2951200938471002', buyer: 'dikymarzuki', prod: 'INFARM - Sekop Taman Besi', alasan: 'Ingin ganti alamat kirim', nominal: 'Rp 19.000', status: 'menunggu' },
+  { order: '2962887120554390', buyer: 'tatajuhata', prod: 'INFARM - POC Buah 250 ml', alasan: 'Pengiriman terlalu lama', nominal: 'Rp 32.000', status: 'menunggu' },
+  { order: '2974102938120017', buyer: 'gzvb7sql1h', prod: 'INFARM - Paket Hidroponik 12 Lubang', alasan: 'Pembeli minta batal', nominal: 'Rp 165.000', status: 'menunggu' },
+  { order: '2988120394857201', buyer: 'feraa.16', prod: 'INFARM - Polybag 35x35 isi 30', alasan: 'Stok kosong di gudang', nominal: 'Rp 28.000', status: 'menunggu' },
+  { order: '2901338475610284', buyer: 'sari.lestari', prod: 'INFARM - Furadan 3GR 1 Kg', alasan: 'Sudah dikirim ulang', nominal: 'Rp 78.000', status: 'proses' },
+  { order: '2911200948571123', buyer: 'wulandari88', prod: 'INFARM - Benih Cabai Micha', alasan: 'Pembeli berubah pikiran', nominal: 'Rp 16.000', status: 'batal' },
 ];
 
 const CANCEL_STATUS = {
@@ -145,6 +145,7 @@ function renderRefunds(status = 'all') {
   body.innerHTML = rows.map((r) => `
     <tr>
       <td><span class="order-no">${r.order}</span></td>
+      <td>${r.buyer}<button class="mini-chat-btn" data-chat="${r.order}" title="Chat ke pembeli">💬</button></td>
       <td><div class="prod-name">${r.prod}</div></td>
       <td>${r.jenis}</td>
       <td>${r.nominal}</td>
@@ -175,6 +176,7 @@ function renderCancels(status = cancelStatus) {
     return `<tr>
       <td class="col-check">${check}</td>
       <td><span class="order-no">${r.order}</span></td>
+      <td>${r.buyer}<button class="mini-chat-btn" data-chat="${r.order}" title="Chat ke pembeli">💬</button></td>
       <td><div class="prod-name">${r.prod}</div></td>
       <td>${r.alasan}</td>
       <td>${r.nominal}</td>
@@ -230,6 +232,51 @@ function updateCancelChips() {
   });
 }
 
+// ---------- Quick Chat: cari data & buka widget dari baris tabel ----------
+function findRecordByOrder(order) {
+  let r = REVIEWS.find((x) => x.order === order);
+  if (r) return { type: 'review', record: r };
+  r = REFUNDS.find((x) => x.order === order);
+  if (r) return { type: 'refund', record: r };
+  r = CANCELS.find((x) => x.order === order);
+  if (r) return { type: 'cancel', record: r };
+  return null;
+}
+
+function activePlatformFor(btn) {
+  const panel = btn.closest('.panel');
+  const at = panel ? panel.querySelector('.pt.active') : null;
+  return at ? at.textContent.trim().split(/\s+/)[0] : 'Marketplace';
+}
+
+function handleChatClick(btn) {
+  const found = findRecordByOrder(btn.dataset.chat);
+  if (!found) return;
+  const { type, record } = found;
+  const platform = activePlatformFor(btn);
+  let context = '';
+  let initialMessage = '';
+
+  if (type === 'review') {
+    context = `⭐ ${record.rating.all}/5 · ${record.prod}`;
+    initialMessage = record.content;
+  } else if (type === 'refund') {
+    context = `💸 ${record.jenis} · ${record.nominal} · #${record.order}`;
+    initialMessage = `Halo min, saya mau tanya soal pengajuan pengembalian dana untuk pesanan #${record.order}.`;
+  } else {
+    context = `❌ ${record.alasan} · ${record.nominal} · #${record.order}`;
+    initialMessage = `Halo min, saya mau tanya soal pembatalan pesanan #${record.order}.`;
+  }
+
+  openQuickChat({
+    id: record.order,
+    name: record.buyer,
+    shop: `infarmofficialshop · ${platform}`,
+    context,
+    initialMessage,
+  });
+}
+
 // ---------- Toast ----------
 let toastTimer;
 function toast(msg) {
@@ -245,6 +292,12 @@ document.addEventListener('DOMContentLoaded', () => {
   renderReviews();
   renderRefunds();
   renderCancels();
+
+  // Tombol 💬 chat ke pembeli (event delegation — berfungsi untuk baris hasil re-render)
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-chat]');
+    if (btn) { e.stopPropagation(); handleChatClick(btn); }
+  });
 
   // Sub-tab switching
   document.querySelectorAll('.subtab[data-tab]').forEach((tab) => {

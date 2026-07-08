@@ -6,6 +6,7 @@
   <title>Infarm CS — Pesanan</title>
   <link rel="stylesheet" href="dashboard.css" />
   <link rel="stylesheet" href="pesanan.css" />
+  <link rel="stylesheet" href="quickchat.css" />
 </head>
 <body>
   <div class="app">
@@ -145,7 +146,7 @@
           <div class="table-wrap">
             <table class="data-table">
               <thead>
-                <tr><th>Nomor Pesanan</th><th>Produk</th><th>Jenis Pengembalian</th><th>Nominal</th><th>Status</th><th>Tindakan AI</th><th>Aksi</th></tr>
+                <tr><th>Nomor Pesanan</th><th>Pembeli</th><th>Produk</th><th>Jenis Pengembalian</th><th>Nominal</th><th>Status</th><th>Tindakan AI</th><th>Aksi</th></tr>
               </thead>
               <tbody id="refundBody"><!-- diisi JS --></tbody>
             </table>
@@ -200,7 +201,7 @@
           <div class="table-wrap">
             <table class="data-table">
               <thead>
-                <tr><th class="col-check"></th><th>Nomor Pesanan</th><th>Produk</th><th>Alasan Pembatalan</th><th>Nominal</th><th>Status</th><th>Tindakan AI</th><th>Aksi</th></tr>
+                <tr><th class="col-check"></th><th>Nomor Pesanan</th><th>Pembeli</th><th>Produk</th><th>Alasan Pembatalan</th><th>Nominal</th><th>Status</th><th>Tindakan AI</th><th>Aksi</th></tr>
               </thead>
               <tbody id="cancelBody"><!-- diisi JS --></tbody>
             </table>
@@ -220,8 +221,35 @@
     </div>
   </div>
 
+  <!-- ======================= QUICK CHAT WIDGET ======================= -->
+  <!-- Akses chat cepat ke pembeli langsung dari halaman Pesanan, tanpa pindah ke halaman Chat. -->
+  <div class="qc-widget" id="qcWidget" hidden>
+    <div class="qc-header" id="qcHeader">
+      <span class="qc-avatar" id="qcAvatar">?</span>
+      <div class="qc-headtext">
+        <div class="qc-name" id="qcName">—</div>
+        <div class="qc-shop" id="qcShop">—</div>
+      </div>
+      <button class="qc-icon" id="qcMinBtn" title="Perkecil">━</button>
+      <button class="qc-icon" id="qcCloseBtn" title="Tutup">✕</button>
+    </div>
+    <div class="qc-body" id="qcBodyEl">
+      <div class="qc-context" id="qcContext"></div>
+      <div class="qc-stream" id="qcStream"></div>
+      <div class="qc-composer">
+        <textarea id="qcInput" placeholder="Klik / untuk memicu Balasan Cepat" maxlength="600"></textarea>
+        <div class="qc-composer-foot">
+          <button class="qc-translate" id="qcTranslate" type="button">Terjemahkan</button>
+          <span class="qc-count" id="qcCount">0/600</span>
+          <button class="qc-send" id="qcSend" type="button">Kirim</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast" hidden></div>
   <script src="rail.js"></script>
+  <script src="quickchat.js"></script>
   <script src="pesanan.js"></script>
 </body>
 </html>

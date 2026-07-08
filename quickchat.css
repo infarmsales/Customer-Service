@@ -1,0 +1,107 @@
+/* ===========================================================
+   Quick Chat Widget — akses chat cepat ke pembeli dari halaman
+   non-chat (mis. Pesanan) tanpa pindah ke halaman Chat utama.
+   =========================================================== */
+
+.qc-widget {
+  position: fixed;
+  left: 20px;
+  bottom: 0;
+  width: 340px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 14px 14px 0 0;
+  box-shadow: 0 -10px 32px rgba(15, 23, 42, 0.18);
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  max-height: 68vh;
+  overflow: hidden;
+}
+.qc-widget[hidden] { display: none; }
+
+.qc-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px 10px 12px;
+  background: var(--green);
+  color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.qc-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  display: grid; place-items: center;
+  font-weight: 700; font-size: 0.76rem;
+  flex-shrink: 0;
+}
+.qc-headtext { flex: 1; min-width: 0; }
+.qc-name { font-weight: 700; font-size: 0.86rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qc-shop { font-size: 0.7rem; opacity: 0.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qc-icon {
+  border: none; background: rgba(255, 255, 255, 0.2); color: #fff;
+  width: 24px; height: 24px; border-radius: 7px; cursor: pointer; flex-shrink: 0; font-size: 0.78rem;
+}
+.qc-icon:hover { background: rgba(255, 255, 255, 0.35); }
+
+.qc-body { display: flex; flex-direction: column; min-height: 0; }
+.qc-widget.minimized { width: 230px; }
+.qc-widget.minimized .qc-body { display: none; }
+
+.qc-context {
+  padding: 8px 12px;
+  background: var(--green-soft);
+  color: var(--text-2);
+  font-size: 0.74rem;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.qc-stream {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 240px;
+  background: var(--page-bg);
+}
+.qc-msg { max-width: 84%; display: flex; flex-direction: column; }
+.qc-msg.in { align-self: flex-start; }
+.qc-msg.out { align-self: flex-end; align-items: flex-end; }
+.qc-bubble { padding: 8px 12px; border-radius: 14px; font-size: 0.82rem; line-height: 1.5; }
+.qc-msg.in .qc-bubble { background: #fff; border: 1px solid var(--border-soft); border-bottom-left-radius: 4px; }
+.qc-msg.out .qc-bubble { background: var(--green); color: #fff; border-bottom-right-radius: 4px; }
+.qc-time { font-size: 0.64rem; color: var(--muted); margin-top: 3px; }
+
+.qc-composer { border-top: 1px solid var(--border); background: #fff; flex-shrink: 0; }
+.qc-composer textarea {
+  width: 100%; border: none; outline: none; resize: none;
+  height: 54px; padding: 10px 12px; font-family: inherit; font-size: 0.82rem; box-sizing: border-box;
+}
+.qc-composer-foot { display: flex; align-items: center; gap: 8px; padding: 6px 10px 10px; }
+.qc-translate {
+  border: 1px solid var(--border); background: #fff; border-radius: 8px;
+  padding: 5px 10px; font-size: 0.72rem; font-weight: 600; color: var(--text-2); cursor: pointer;
+}
+.qc-translate:hover { background: var(--green-soft); }
+.qc-count { font-size: 0.68rem; color: var(--muted); margin-left: auto; }
+.qc-send { border: none; background: var(--green); color: #fff; border-radius: 8px; padding: 6px 14px; font-weight: 700; font-size: 0.78rem; cursor: pointer; }
+.qc-send:hover { background: var(--green-hover); }
+
+/* Tombol ikon chat kecil di dalam tabel (dekat nama pembeli) */
+.mini-chat-btn {
+  border: none; background: var(--green-mint); color: var(--green-dark);
+  width: 22px; height: 22px; border-radius: 6px; cursor: pointer; font-size: 0.76rem;
+  display: inline-grid; place-items: center; vertical-align: middle; margin-left: 5px;
+}
+.mini-chat-btn:hover { background: var(--green); color: #fff; }
+
+@media (max-width: 480px) {
+  .qc-widget { left: 8px; right: 8px; width: auto; }
+  .qc-widget.minimized { width: auto; }
+}
