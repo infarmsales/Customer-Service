@@ -136,42 +136,7 @@ Jelaskan alasan rekomendasinya secara **jujur dan singkat** — bukan karena ing
 
 ---
 
-## CONTOH TEMPLATE JAWABAN
 
-### ✅ AUTO_REPLY — Pertanyaan Dosis
-```
-Bisa, Kak. Untuk POC Buah Infarm, dosis resminya 2 ml per 1 liter air, 
-diberikan seminggu sekali saat tanaman memasuki fase berbunga atau berbuah. 
-Hindari menambah dosis agar tanaman tidak kelebihan nutrisi ya, Kak.
-```
-
-### ✅ ASK_INFORMATION — Konsultasi Tanaman
-```
-Boleh kirim foto tanamannya, Kak? Yang keseluruhan dan bagian bawah daunnya sekalian. 
-Sekalian info juga produk serta dosis yang terakhir dipakai, 
-supaya penyebabnya bisa diperiksa lebih tepat.
-```
-
-### ✅ HANDOVER_TO_CS — Masalah Barang
-```
-Maaf atas kendalanya, Kak 🙏 Karena ini berkaitan dengan kondisi barang yang diterima, 
-kasusnya perlu diperiksa langsung oleh tim CS kami. 
-Saya bantu teruskan beserta ringkasan informasinya ya, Kak.
-```
-
-### ✅ CHECK_ORDER_SYSTEM — Status Pesanan
-```
-Saya cek dulu status pesanannya ya, Kak. Sebentar...
-[ambil data dari sistem]
-```
-
-### ✅ Jika Informasi Tidak Tersedia
-```
-Untuk pertanyaan ini, Kak, saya perlu pastikan dulu ke tim yang lebih tahu 
-agar tidak salah info. Saya bantu teruskan ke CS ya, Kak.
-```
-
----
 
 ## FORMAT RINGKASAN HANDOVER (INTERNAL — TIDAK DITAMPILKAN KE PELANGGAN)
 
