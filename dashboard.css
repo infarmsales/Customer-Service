@@ -80,6 +80,37 @@ html, body {
   display: flex;
   justify-content: center;
   gap: 8px;
+  min-width: 0;
+}
+
+/* Tombol toggle mobile (rail/percakapan/info) — disembunyikan di layar lebar */
+.mobile-chat-toggle {
+  display: none;
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.mobile-chat-toggle:hover { background: var(--green-mint); }
+
+.mobile-close-btn {
+  display: none;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 11px;
+  background: var(--green-soft);
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--green-dark);
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .scope-select {
@@ -145,6 +176,7 @@ html, body {
   flex: 1;
   display: flex;
   min-height: 0;
+  position: relative;
 }
 
 /* ---- Icon rail ---- */
@@ -347,9 +379,10 @@ html, body {
   background: #fff;
   border-bottom: 1px solid var(--border);
 }
-.chat-head-left { display: flex; align-items: center; gap: 12px; }
-.chat-cust { font-weight: 700; }
-.chat-meta { font-size: 0.78rem; color: var(--muted); }
+.chat-head-left { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
+.chat-head-left > div { min-width: 0; }
+.chat-cust { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-meta { font-size: 0.78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chat-head-stats { display: flex; align-items: center; gap: 16px; }
 .stat { font-size: 0.8rem; color: var(--text-2); }
 .stat strong { color: var(--text); }
@@ -401,7 +434,7 @@ html, body {
 .ai-badge { font-weight: 800; color: var(--green-dark); }
 .ai-conf { margin-left: auto; font-size: 0.72rem; color: var(--muted); }
 .ai-suggestion { margin: 0 0 10px; font-size: 0.88rem; line-height: 1.55; color: var(--text-2); }
-.ai-actions { display: flex; gap: 8px; }
+.ai-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .ai-use, .ai-edit, .ai-ho {
   border-radius: 10px;
   padding: 8px 14px;
@@ -674,7 +707,12 @@ html, body {
 .toast[hidden] { display: none; }
 @keyframes toastUp { from { transform: translate(-50%, 12px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
 
-/* ---- Responsiveness: sembunyikan kolom sekunder di layar kecil ---- */
+/* ===========================================================
+   RESPONSIVITAS (WEB & MOBILE) — lihat juga claude.md
+   Panel sekunder disembunyikan bertahap di layar sempit, lalu
+   bisa dibuka kembali sebagai overlay lewat tombol toggle
+   mobile (☰ / 🏪 / ℹ️) yang hanya tampil di breakpoint mobile.
+   =========================================================== */
 @media (max-width: 1180px) {
   .info { display: none; }
 }
@@ -683,4 +721,59 @@ html, body {
 }
 @media (max-width: 760px) {
   .conversations { display: none; }
+
+  /* Topbar: search pindah ke baris baru agar tidak terpotong */
+  .topbar { flex-wrap: wrap; height: auto; min-height: 56px; row-gap: 8px; }
+  .topbar-title { display: none; }
+  .topbar-search { order: 3; flex-basis: 100%; justify-content: flex-start; }
+  .search-field { width: 100%; }
+
+  /* Rail jadi bilah navigasi bawah (bottom nav) */
+  .workspace { flex-direction: column; }
+  .rail {
+    order: 2;
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding: 6px 8px;
+    gap: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .rail-spacer { display: none; }
+  .rail-btn { flex-shrink: 0; width: 42px; height: 42px; }
+
+  /* Tombol buka Toko / Percakapan / Info hanya muncul di mobile */
+  .mobile-chat-toggle { display: inline-flex; align-items: center; justify-content: center; }
+
+  /* Shops, Percakapan, Info dibuka sebagai overlay penuh di atas Chat */
+  .shops.mobile-open,
+  .conversations.mobile-open,
+  .info.mobile-open {
+    display: flex;
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    width: 100%;
+  }
+  .mobile-close-btn { display: flex; }
+
+  .chat-head { flex-wrap: wrap; height: auto; padding: 10px 12px; row-gap: 8px; }
+  .chat-head-stats { flex-wrap: wrap; row-gap: 6px; }
+}
+
+@media (max-width: 480px) {
+  .topbar { padding: 0 12px; }
+  .brand-logo { height: 34px; width: 34px; }
+  .lang-pill { display: none; }
+  .chat-stream { padding: 14px 12px; }
+  .msg { max-width: 88%; }
+  .ai-assist, .composer { margin-left: 12px; margin-right: 12px; }
+  .modal { padding: 18px; }
+  .modal-actions { flex-direction: column-reverse; }
+  .modal-actions button { width: 100%; }
+  .platform-pick { flex-wrap: wrap; }
+  .platform-opt { min-width: 100px; }
+  .form-2col { grid-template-columns: 1fr; }
 }

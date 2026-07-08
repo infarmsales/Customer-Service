@@ -391,3 +391,12 @@ input[type="text"] {
     flex-wrap: wrap;
   }
 }
+
+@media (max-width: 480px) {
+  .top-bar { flex-wrap: wrap; gap: 12px; }
+  .hero-card { padding: 22px; min-height: 0; }
+  .hero-metrics { grid-template-columns: 1fr; }
+  .login-panel, .login-card { padding: 16px; }
+  .verification-row { grid-template-columns: 1fr; }
+  .section { padding: 20px; }
+}

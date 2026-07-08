@@ -53,7 +53,8 @@
       </nav>
 
       <!-- ======================= SHOP LIST ======================= -->
-      <aside class="shops">
+      <aside class="shops" id="shopsPanel">
+        <button class="mobile-close-btn" id="closeShopsOverlay" type="button">✕ Tutup</button>
         <div class="panel-head">
           <span class="panel-title">Toko Terhubung</span>
           <div class="panel-head-tools">
@@ -80,7 +81,8 @@
       </aside>
 
       <!-- ======================= CONVERSATION LIST ======================= -->
-      <section class="conversations">
+      <section class="conversations" id="conversationsPanel">
+        <button class="mobile-close-btn" id="closeConvOverlay" type="button">✕ Tutup</button>
         <div class="conv-tabs">
           <button class="conv-tab active" data-filter="all">Semua</button>
           <button class="conv-tab" data-filter="unread">Belum dibaca <span class="tab-count">2</span></button>
@@ -98,6 +100,8 @@
       <main class="chat">
         <div class="chat-head">
           <div class="chat-head-left">
+            <button class="mobile-chat-toggle" id="mobileShopToggle" type="button" title="Toko terhubung">🏪</button>
+            <button class="mobile-chat-toggle" id="mobileConvToggle" type="button" title="Daftar percakapan">☰</button>
             <span class="avatar lg" id="chatAvatar">DM</span>
             <div>
               <div class="chat-cust" id="chatCust">dikymarzuki</div>
@@ -109,6 +113,7 @@
             <span class="stat">💬 <strong id="chatCount">61</strong> chat</span>
             <span class="stat">👁 <strong>376</strong> dilihat</span>
             <button class="ghost-btn">Monitor Akun ›</button>
+            <button class="mobile-chat-toggle" id="mobileInfoToggle" type="button" title="Info pelanggan">ℹ️</button>
           </div>
         </div>
 
@@ -150,7 +155,8 @@
       </main>
 
       <!-- ======================= CUSTOMER / ORDER PANEL ======================= -->
-      <aside class="info">
+      <aside class="info" id="infoPanel">
+        <button class="mobile-close-btn" id="closeInfoOverlay" type="button">✕ Tutup</button>
         <div class="info-profile">
           <span class="avatar xl" id="infoAvatar">DM</span>
           <div>

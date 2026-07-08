@@ -165,7 +165,10 @@ function renderConvList(filter = 'all', search = '') {
           <div class="conv-row"><span class="conv-name">${c.name}</span><span class="conv-time">${c.time}</span></div>
           <div class="conv-row"><span class="conv-snippet">${c.snippet}</span><span class="tag ${a.cls}">${a.tag}</span></div>
         </div>`;
-      li.addEventListener('click', () => selectConversation(c.id));
+      li.addEventListener('click', () => {
+        selectConversation(c.id);
+        $('#conversationsPanel')?.classList.remove('mobile-open'); // tutup overlay mobile setelah memilih
+      });
       list.appendChild(li);
     });
 }
@@ -420,8 +423,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     s.addEventListener('click', () => {
       document.querySelectorAll('.shop-item').forEach((x) => x.classList.remove('active'));
       s.classList.add('active');
+      $('#shopsPanel')?.classList.remove('mobile-open'); // tutup overlay mobile setelah memilih
     });
   });
+
+  // ===== Toggle panel mobile (Toko / Percakapan / Info) =====
+  $('#mobileShopToggle')?.addEventListener('click', () => $('#shopsPanel').classList.toggle('mobile-open'));
+  $('#mobileConvToggle')?.addEventListener('click', () => $('#conversationsPanel').classList.toggle('mobile-open'));
+  $('#mobileInfoToggle')?.addEventListener('click', () => $('#infoPanel').classList.toggle('mobile-open'));
+  $('#closeShopsOverlay')?.addEventListener('click', () => $('#shopsPanel').classList.remove('mobile-open'));
+  $('#closeConvOverlay')?.addEventListener('click', () => $('#conversationsPanel').classList.remove('mobile-open'));
+  $('#closeInfoOverlay')?.addEventListener('click', () => $('#infoPanel').classList.remove('mobile-open'));
 
   // AI Assist
   $('#aiUse').addEventListener('click', () => {

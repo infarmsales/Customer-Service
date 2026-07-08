@@ -101,6 +101,11 @@
 }
 .mini-chat-btn:hover { background: var(--green); color: #fff; }
 
+@media (max-width: 760px) {
+  /* Beri jarak dari bilah navigasi bawah (rail mode mobile, lihat dashboard.css) */
+  .qc-widget { bottom: 56px; }
+}
+
 @media (max-width: 480px) {
   .qc-widget { left: 8px; right: 8px; width: auto; }
   .qc-widget.minimized { width: auto; }

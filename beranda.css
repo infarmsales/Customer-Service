@@ -215,3 +215,13 @@
   .realtime-grid { grid-template-columns: repeat(2, 1fr); }
   .platforms { grid-template-columns: repeat(3, 1fr); }
 }
+@media (max-width: 480px) {
+  .home { padding: 14px 14px 30px; gap: 14px; }
+  .card { padding: 16px; }
+  .metric-cards { grid-template-columns: 1fr; }
+  .realtime-grid { grid-template-columns: 1fr; }
+  .platforms { grid-template-columns: repeat(2, 1fr); }
+  .bars { gap: 10px; }
+  .bar { width: 14px; }
+  .bars-axis { gap: 10px; }
+}

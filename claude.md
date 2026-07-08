@@ -209,6 +209,37 @@ Tingkat Urgensi: [Normal / Tinggi / Sangat Tinggi]
 
 ---
 
+## STANDAR RESPONSIVITAS (WEB & MOBILE)
+
+> Seluruh halaman console (login, Beranda, Chat, Pesanan, AI Chatbot, Broadcast, Statistik, Pengaturan, Flag Koreksi) **wajib tampil responsif** — dapat digunakan dengan nyaman baik di layar desktop/web maupun handphone. Terapkan standar ini setiap kali membuat atau mengubah halaman baru.
+
+### Breakpoint Baku
+Gunakan titik ubah (breakpoint) yang konsisten di semua halaman:
+
+| Breakpoint | Target perangkat | Perlakuan umum |
+|---|---|---|
+| `> 1180px` | Desktop lebar | Tata letak penuh (semua panel/kolom tampil) |
+| `≤ 1180px` | Laptop kecil / tablet lanskap | Panel tersier (mis. info pelanggan) mulai disembunyikan |
+| `≤ 980px` | Tablet | Panel sekunder (mis. daftar toko) disembunyikan; grid multi-kolom → 2 kolom |
+| `≤ 760px` | Mobile besar / tablet portrait | **Mode mobile aktif**: rail ikon berubah jadi bilah navigasi bawah, topbar melipat, panel tersembunyi bisa dibuka lewat tombol toggle sebagai overlay |
+| `≤ 480px` | Mobile kecil | Grid → 1 kolom, padding dipadatkan, tombol modal ditumpuk vertikal |
+
+### Prinsip Wajib
+1. **Rail navigasi → bottom nav di mobile.** Pada `≤ 760px`, ikon rail (🏠💬📦🤖📣📈⚙️👤) berpindah dari sisi kiri menjadi bilah horizontal di bawah layar (`overflow-x: auto` bila ikon tak cukup lebar), bukan disembunyikan begitu saja.
+2. **Panel yang disembunyikan harus tetap bisa diakses.** Jika sebuah panel (daftar toko, daftar percakapan, info pelanggan) disembunyikan karena sempit, sediakan tombol toggle (☰ / 🏪 / ℹ️) yang membukanya kembali sebagai overlay layar penuh, lengkap dengan tombol "✕ Tutup". Dilarang menyembunyikan panel tanpa cara membukanya kembali.
+3. **Tabel data selalu bisa di-scroll horizontal**, bukan terpotong. Bungkus `<table>` dengan `overflow-x: auto` dan beri `min-width` pada tabel supaya kolom tetap terbaca, bukan dipadatkan sampai tidak jelas.
+4. **Modal & form menyesuaikan lebar layar** (`width: min(Npx, 92vw)`), dan tombol aksi modal ditumpuk vertikal (bukan berdampingan) di layar `≤ 480px`.
+5. **Grid kartu/statistik kolase bertahap**: 4–6 kolom di desktop → 2 kolom di tablet → 1 kolom di mobile kecil. Jangan biarkan kartu memipih sampai teks tidak terbaca.
+6. **Elemen yang bisa wrap harus diberi `flex-wrap: wrap`** (baris tombol aksi, filter, tag) supaya tidak terpotong di layar sempit.
+7. **Target sentuh (tap target) minimal ±40px** untuk tombol/ikon yang bisa ditekan di mobile.
+8. **Teks panjang (nama pelanggan, nama toko) dipotong rapi** dengan `text-overflow: ellipsis`, bukan mendorong tata letak jadi rusak.
+9. Setiap halaman baru **wajib disertai file CSS dengan blok `@media`** mengikuti breakpoint di atas — tidak cukup hanya terlihat baik di layar desktop saat development.
+
+### Referensi Implementasi
+Aturan ini diterapkan di `dashboard.css` (shell topbar + rail bersama untuk semua halaman) dan disesuaikan per halaman di `beranda.css`, `pesanan.css`, `ai.css`, `broadcast.css`, `statistik.css`, `settings.css`, `flag.css`, `quickchat.css`, dan `styles.css`.
+
+---
+
 *Dokumen ini adalah panduan operasional AI CS Infarm. Diperbarui sesuai perubahan produk, SOP, atau kebijakan brand.*
 
 ---

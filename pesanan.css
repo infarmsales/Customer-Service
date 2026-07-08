@@ -126,9 +126,11 @@
   background: #fff;
   border: 1px solid var(--border);
   border-radius: 14px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
 }
-.data-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+.data-table { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 0.86rem; }
 .data-table thead th {
   text-align: left;
   background: var(--green-soft);
@@ -233,4 +235,12 @@
 @media (max-width: 1100px) {
   .filter-row { gap: 8px; }
   .search-field.sm { width: 180px; }
+}
+@media (max-width: 700px) {
+  .panel { padding: 12px 14px 24px; }
+  .search-field.sm { width: 100%; }
+  .table-foot { justify-content: space-between; flex-wrap: wrap; }
+  .bulk-bar { flex-wrap: wrap; }
+  .bulk-spacer { display: none; }
+  .btn-approve, .btn-reject { flex: 1; min-width: 140px; }
 }
