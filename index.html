@@ -95,6 +95,7 @@
 
       if (u === AKUN.username && p === AKUN.password) {
         errorEl.hidden = true;
+        try { localStorage.setItem('infarm_cs_user', JSON.stringify({ username: u })); } catch (_) {}
         window.location.href = 'dashboard.html';
       } else {
         errorEl.hidden = false;

@@ -583,7 +583,9 @@ html, body {
 
 .modal-form label { display: block; font-weight: 600; font-size: 0.84rem; color: var(--text-2); margin: 14px 0 6px; }
 .modal-form input[type="text"],
-.modal-form input[type="password"] {
+.modal-form input[type="password"],
+.modal-form textarea,
+.modal-form select {
   width: 100%;
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -591,8 +593,12 @@ html, body {
   font-size: 0.9rem;
   background: var(--green-soft);
   font-family: inherit;
+  resize: vertical;
 }
-.modal-form input:focus { outline: 2px solid var(--green); background: #fff; }
+.modal-form input:focus, .modal-form textarea:focus, .modal-form select:focus { outline: 2px solid var(--green); background: #fff; }
+.modal-form .field-hint { font-size: 0.76rem; color: var(--muted); margin-top: 4px; }
+.modal-form label.req::before { content: "* "; color: #dc2626; }
+.modal.wide { width: min(640px, 94vw); }
 
 .platform-pick { display: flex; gap: 10px; }
 .platform-opt {

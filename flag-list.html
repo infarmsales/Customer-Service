@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Infarm CS — Daftar Flag Koreksi</title>
+  <link rel="stylesheet" href="dashboard.css" />
+  <link rel="stylesheet" href="pesanan.css" />
+  <link rel="stylesheet" href="flag.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- ======================= TOP BAR ======================= -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <img class="brand-logo" src="logo-infarm.png" alt="Infarm.ID" />
+        <span class="topbar-title">Customer Service Console</span>
+      </div>
+      <div class="topbar-right">
+        <button class="lang-pill">ID ▾</button>
+        <button class="icon-btn" title="Statistik">📊</button>
+        <button class="icon-btn" title="Notifikasi"><span class="dot-badge">3</span>🔔</button>
+        <a class="icon-btn" href="index.html" title="Keluar" style="text-decoration:none">⎋</a>
+      </div>
+    </header>
+
+    <div class="workspace">
+
+      <!-- ======================= ICON RAIL ======================= -->
+      <nav class="rail">
+        <a class="rail-btn" href="beranda.html" title="Beranda">🏠</a>
+        <a class="rail-btn" href="dashboard.html" title="Chat"><span class="rail-badge">99+</span>💬</a>
+        <a class="rail-btn" href="pesanan.html" title="Pesanan">📦</a>
+        <a class="rail-btn active" href="ai.html" title="AI Chatbot">🤖</a>
+        <a class="rail-btn" href="broadcast.html" title="Broadcast">📣</a>
+        <a class="rail-btn" href="statistik.html" title="Statistik">📈</a>
+        <div class="rail-spacer"></div>
+        <a class="rail-btn" href="settings.html" title="Pengaturan">⚙️</a>
+        <a class="rail-btn" href="index.html" title="Akun">👤</a>
+      </nav>
+
+      <!-- ======================= FLAG LIST CONTENT ======================= -->
+      <main class="flagpage">
+        <a class="back-link" href="ai.html">‹ Kembali ke AI Chatbot</a>
+
+        <div class="flag-headbar">
+          <div>
+            <h1>Daftar Flag Koreksi Jawaban AI</h1>
+            <p class="flag-sub">Laporan CS atas jawaban AI yang salah/kurang tepat — menunggu review sebelum dijadikan revisi Knowledge Base.</p>
+          </div>
+        </div>
+
+        <!-- Role switcher (demo) -->
+        <div class="role-switch-box">
+          <span class="role-hint">Tampilan sebagai:</span>
+          <div class="role-switch">
+            <button class="role-btn" data-role="cs">🧑‍💼 CS Agent</button>
+            <button class="role-btn" data-role="admin">🛡️ Admin / Owner</button>
+          </div>
+          <span class="role-hint" id="roleHint"></span>
+        </div>
+
+        <!-- Filter status -->
+        <div class="filter-row sub flag-filter">
+          <div class="chip-tabs" id="statusTabs">
+            <button class="chip active" data-status="all">Semua <b id="cAll">0</b></button>
+            <button class="chip" data-status="menunggu">Menunggu Review <b id="cMenunggu">0</b></button>
+            <button class="chip" data-status="disetujui">Disetujui <b id="cDisetujui">0</b></button>
+            <button class="chip" data-status="ditolak">Ditolak <b id="cDitolak">0</b></button>
+          </div>
+        </div>
+
+        <div class="ai-note" id="scopeNote"></div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Tanggal Flag</th>
+                <th>Pesan Pelanggan</th>
+                <th>Kategori</th>
+                <th>Pelapor</th>
+                <th>Status</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="flagBody"><!-- diisi flag-list.js --></tbody>
+          </table>
+          <div class="empty-state" id="flagEmpty" hidden>
+            <div class="empty-ill">🚩</div><p>Belum ada flag koreksi.</p>
+          </div>
+        </div>
+
+        <div class="table-foot">
+          <span>Total <b id="flagTotal">0</b></span>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="rail.js"></script>
+  <script src="flag-store.js"></script>
+  <script src="flag-list.js"></script>
+</body>
+</html>

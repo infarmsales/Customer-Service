@@ -43,6 +43,7 @@
       <main class="ai">
         <div class="ai-tabbar">
           <button class="ai-tab active">AI Chatbot</button>
+          <a class="ai-tab-link" href="flag-list.html">🚩 Flag Koreksi Jawaban AI <span class="tab-badge" id="flagPendingBadge" hidden>0</span></a>
         </div>
 
         <div class="ai-grid">
@@ -173,6 +174,7 @@
               <div class="out-reply" id="outReply"></div>
               <div class="out-actions">
                 <button class="act-link" id="copyReply">Salin balasan</button>
+                <button class="act-link flag-link" id="flagBtn">🚩 Flag Koreksi Jawaban Ini</button>
               </div>
             </div>
             <div class="coba-placeholder" id="placeholder">
@@ -185,8 +187,56 @@
     </div>
   </div>
 
+  <!-- ======================= MODAL: FLAG KOREKSI JAWABAN AI ======================= -->
+  <div class="modal-overlay" id="flagModal" hidden>
+    <div class="modal wide">
+      <div class="modal-head">
+        <h3>🚩 Flag Koreksi Jawaban AI</h3>
+        <button class="modal-close" id="flagModalClose" title="Tutup">✕</button>
+      </div>
+      <p class="modal-desc">Laporkan jawaban AI yang salah/kurang tepat agar direview tim Admin/Owner dan dijadikan revisi Knowledge Base. Mengirim flag <b>tidak</b> langsung mengubah Knowledge Base — hanya tersimpan sebagai laporan menunggu review.</p>
+
+      <form class="modal-form" id="flagForm">
+        <label>Pesan Pelanggan</label>
+        <textarea id="flagCustMsg" rows="2" placeholder="Pesan asli dari pelanggan"></textarea>
+
+        <label>Jawaban AI yang Di-flag</label>
+        <textarea id="flagAiAnswer" rows="3" placeholder="Jawaban AI yang dianggap salah/kurang tepat"></textarea>
+
+        <label class="req">Jawaban yang Seharusnya</label>
+        <textarea id="flagCorrect" rows="3" placeholder="Tulis jawaban yang benar menurut Kakak" required></textarea>
+
+        <div class="form-2col">
+          <div>
+            <label class="req">Kategori</label>
+            <select id="flagCategory" required>
+              <option value="produk">Produk</option>
+              <option value="kebijakan">Kebijakan</option>
+              <option value="dosis">Dosis</option>
+              <option value="harga">Harga</option>
+              <option value="lainnya">Lainnya</option>
+            </select>
+          </div>
+          <div>
+            <label class="req">Nama CS Pelapor</label>
+            <input type="text" id="flagReporter" placeholder="Nama Kakak" required />
+          </div>
+        </div>
+
+        <label>Catatan Tambahan <span class="field-hint">(opsional)</span></label>
+        <textarea id="flagNote" rows="2" placeholder="Konteks tambahan untuk reviewer, bila perlu"></textarea>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" id="flagCancel">Batal</button>
+          <button type="submit" class="btn-primary">Kirim Flag Koreksi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div class="toast" id="toast" hidden></div>
   <script src="rail.js"></script>
+  <script src="flag-store.js"></script>
   <script src="ai.js"></script>
 </body>
 </html>

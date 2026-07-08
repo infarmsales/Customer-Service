@@ -121,11 +121,64 @@ function toast(msg) {
   toastTimer = setTimeout(() => (t.hidden = true), 2600);
 }
 
+// ---------- Flag Koreksi Jawaban AI ----------
+// Fungsi loadFlags/addFlag/pendingFlagCount/getCurrentUserName berasal dari flag-store.js
+function updateFlagBadge() {
+  const badge = $('#flagPendingBadge');
+  if (!badge) return;
+  const n = pendingFlagCount();
+  badge.hidden = n === 0;
+  badge.textContent = n;
+}
+
+function openFlagModal() {
+  $('#flagCustMsg').value = $('#custMsg').value.trim();
+  $('#flagAiAnswer').value = $('#outReply').textContent.trim();
+  $('#flagCorrect').value = '';
+  $('#flagCategory').value = 'produk';
+  $('#flagReporter').value = getCurrentUserName();
+  $('#flagNote').value = '';
+  $('#flagModal').hidden = false;
+  $('#flagCorrect').focus();
+}
+function closeFlagModal() { $('#flagModal').hidden = true; }
+
+function submitFlag(e) {
+  e.preventDefault();
+  const correctAnswer = $('#flagCorrect').value.trim();
+  const reporterName = $('#flagReporter').value.trim();
+  if (!correctAnswer) { toast('Isi dulu jawaban yang seharusnya, Kak'); return; }
+  if (!reporterName) { toast('Isi dulu nama CS pelapor, Kak'); return; }
+
+  addFlag({
+    customerMessage: $('#flagCustMsg').value.trim(),
+    aiAnswer: $('#flagAiAnswer').value.trim(),
+    aiAction: $('#outTag').textContent.trim(),
+    correctAnswer,
+    category: $('#flagCategory').value,
+    reporterName,
+    note: $('#flagNote').value.trim(),
+  });
+
+  closeFlagModal();
+  updateFlagBadge();
+  toast('Flag koreksi terkirim — menunggu review Admin/Owner ✅');
+}
+
 // ---------- Wiring ----------
 document.addEventListener('DOMContentLoaded', () => {
   checkBackend();
+  updateFlagBadge();
 
   $('#askBtn').addEventListener('click', askAI);
+
+  // Flag Koreksi Jawaban AI
+  $('#flagBtn').addEventListener('click', openFlagModal);
+  $('#flagModalClose').addEventListener('click', closeFlagModal);
+  $('#flagCancel').addEventListener('click', closeFlagModal);
+  $('#flagModal').addEventListener('click', (e) => { if (e.target.id === 'flagModal') closeFlagModal(); });
+  $('#flagForm').addEventListener('submit', submitFlag);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeFlagModal(); });
 
   document.querySelectorAll('.sample').forEach((b) => {
     b.addEventListener('click', () => { $('#custMsg').value = b.textContent; $('#custMsg').focus(); });

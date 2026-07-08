@@ -21,6 +21,19 @@
   border-bottom: 3px solid var(--green);
   cursor: default;
 }
+.ai-tab-link {
+  padding: 14px 16px;
+  font-weight: 600;
+  color: var(--text-2);
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.ai-tab-link:hover { color: var(--green-dark); background: var(--green-soft); }
+.tab-badge { background: #ef4444; color: #fff; font-size: 0.68rem; font-weight: 800; padding: 1px 7px; border-radius: 10px; }
+.flag-link { margin-left: auto; }
 
 /* ---- Grid utama ---- */
 .ai-grid { display: grid; grid-template-columns: 240px 1fr; gap: 18px; padding: 18px 20px; }
@@ -189,7 +202,7 @@
   color: var(--text);
   border: 1px solid var(--border-soft);
 }
-.out-actions { margin-top: 12px; }
+.out-actions { margin-top: 12px; display: flex; align-items: center; }
 .act-link { color: var(--green-dark); font-weight: 600; cursor: pointer; background: none; border: none; padding: 0; }
 .act-link:hover { text-decoration: underline; }
 
