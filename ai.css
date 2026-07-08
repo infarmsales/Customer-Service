@@ -13,31 +13,29 @@
 }
 
 /* ---- Tab bar ---- */
-.ai-tabbar { background: #fff; border-bottom: 1px solid var(--border); padding: 0 18px; display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.ai-tabbar { background: #fff; border-bottom: 1px solid var(--border); padding: 0 18px; display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; min-height: 50px; flex-shrink: 0; }
 .ai-tab {
   border: none; background: transparent;
   padding: 14px 16px;
-  font-weight: 700; color: var(--green-dark);
-  border-bottom: 3px solid var(--green);
-  cursor: default;
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-.ai-tab-link {
-  padding: 14px 16px;
-  font-weight: 600;
-  color: var(--text-2);
-  text-decoration: none;
+  font-weight: 600; color: var(--text-2);
   border-bottom: 3px solid transparent;
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
   white-space: nowrap;
 }
-.ai-tab-link:hover { color: var(--green-dark); background: var(--green-soft); }
+.ai-tab:hover { color: var(--green-dark); background: var(--green-soft); }
+.ai-tab.active { font-weight: 700; color: var(--green-dark); border-bottom-color: var(--green); cursor: default; }
 .tab-badge { background: #ef4444; color: #fff; font-size: 0.68rem; font-weight: 800; padding: 1px 7px; border-radius: 10px; }
 .flag-link { margin-left: auto; }
+
+/* ---- Sub-tab panels ---- */
+.ai-tabpanel[hidden] { display: none; }
+#aitab-flag { padding: 18px 20px 28px; }
+#aitab-flag .flag-headbar { margin-bottom: 4px; }
+#aitab-flag .flag-headbar h2 { margin: 0; font-size: 1.3rem; }
 
 /* ---- Grid utama ---- */
 .ai-grid { display: grid; grid-template-columns: 240px 1fr; gap: 18px; padding: 18px 20px; }
@@ -235,4 +233,5 @@
   .r3 { width: 150px; height: 150px; }
   .core-bubble { width: 74px; height: 74px; font-size: 2rem; }
   .coba-card { margin: 0 12px 20px; padding: 16px; }
+  #aitab-flag { padding: 14px 14px 24px; }
 }

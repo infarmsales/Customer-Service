@@ -1,20 +1,82 @@
 /* ===========================================================
-   Infarm CS — Detail Flag Koreksi Jawaban AI
-   Fungsi data (getFlag, updateFlag, dll) berasal dari flag-store.js
+   Infarm CS — Sub-halaman "Flag Koreksi Jawaban AI"
+   Ditanam di dalam halaman AI Chatbot (ai.html) sebagai sub-tab,
+   bukan halaman terpisah. Tampilan: Daftar ↔ Detail (tanpa pindah URL).
+   Fungsi data (loadFlags, getFlag, updateFlag, dll) dari flag-store.js
    =========================================================== */
 
-const $ = (s) => document.querySelector(s);
+const $f = (s) => document.querySelector(s);
 
-function getFlagIdFromUrl() {
-  return new URLSearchParams(location.search).get('id');
+let flagStatusFilter = 'all';
+let currentFlagId = null;
+
+// ---------- Daftar Flag ----------
+function flagScopedList() {
+  const list = loadFlags();
+  if (isAdmin()) return list;
+  const me = getCurrentUserName().toLowerCase();
+  return list.filter((f) => (f.reporterName || '').toLowerCase() === me);
 }
 
-function renderRoleButtons() {
-  document.querySelectorAll('.role-btn').forEach((b) => b.classList.toggle('active', b.dataset.role === getRole()));
-  $('#roleHint').textContent = `Login sebagai: ${getCurrentUserName()}`;
+function renderFlagCounts(list) {
+  $f('#cAll').textContent = list.length;
+  $f('#cMenunggu').textContent = list.filter((f) => f.status === 'menunggu').length;
+  $f('#cDisetujui').textContent = list.filter((f) => f.status === 'disetujui').length;
+  $f('#cDitolak').textContent = list.filter((f) => f.status === 'ditolak').length;
 }
 
-function decisionSectionHtml(flag) {
+function renderFlagScopeNote() {
+  const note = $f('#scopeNote');
+  if (!note) return;
+  if (isAdmin()) {
+    note.innerHTML = '🛡️ <b>Peran Admin/Owner</b> — menampilkan seluruh flag dari semua CS. Buka detail untuk menyetujui atau menolak.';
+  } else {
+    note.innerHTML = `🧑‍💼 <b>Peran CS Agent</b> — menampilkan flag yang dilaporkan oleh <b>${getCurrentUserName()}</b> saja. Persetujuan hanya dapat dilakukan oleh Admin/Owner.`;
+  }
+}
+
+function renderFlagRoleButtons() {
+  document.querySelectorAll('#aitab-flag .role-btn').forEach((b) => b.classList.toggle('active', b.dataset.role === getRole()));
+  const hint = $f('#roleHint');
+  if (hint) hint.textContent = `Login sebagai: ${getCurrentUserName()}`;
+}
+
+function renderFlagTable() {
+  const scoped = flagScopedList();
+  renderFlagCounts(scoped);
+
+  const rows = scoped.filter((f) => flagStatusFilter === 'all' || f.status === flagStatusFilter);
+  const body = $f('#flagBody');
+  if (!body) return;
+  body.innerHTML = rows.map((f) => {
+    const st = FLAG_STATUS[f.status];
+    return `<tr>
+      <td>${fmtDate(f.createdAt)}</td>
+      <td class="msg-cell"><div class="primary">${f.customerMessage || '—'}</div></td>
+      <td><span class="cat-pill">${FLAG_CATEGORIES[f.category] || 'Lainnya'}</span></td>
+      <td>${f.reporterName || '—'}</td>
+      <td><span class="pill ${st.cls}">${st.label}</span></td>
+      <td><button class="act-link" data-open-flag="${f.id}" type="button">Lihat Detail</button></td>
+    </tr>`;
+  }).join('');
+
+  $f('#flagEmpty').hidden = rows.length > 0;
+  $f('#flagTotal').textContent = rows.length;
+
+  body.querySelectorAll('[data-open-flag]').forEach((b) => {
+    b.addEventListener('click', () => openFlagDetailView(b.dataset.openFlag));
+  });
+}
+
+function renderFlagListAll() {
+  renderFlagRoleButtons();
+  renderFlagScopeNote();
+  renderFlagTable();
+  updateFlagBadge();
+}
+
+// ---------- Detail Flag ----------
+function flagDecisionSectionHtml(flag) {
   const st = FLAG_STATUS[flag.status];
   const admin = isAdmin();
 
@@ -24,8 +86,8 @@ function decisionSectionHtml(flag) {
         <div class="flag-card" id="decisionCard">
           <h3>Keputusan Review</h3>
           <div class="decision-bar">
-            <button class="btn-approve" id="btnApprove" type="button">✓ Setujui — Jadikan Draft Revisi KB</button>
-            <button class="btn-reject" id="btnReject" type="button">✕ Tolak</button>
+            <button class="btn-approve" id="btnApproveFlag" type="button">✓ Setujui — Jadikan Draft Revisi KB</button>
+            <button class="btn-reject" id="btnRejectFlag" type="button">✕ Tolak</button>
           </div>
           <div class="reject-reason-box" id="rejectBox">
             <label style="font-weight:600;font-size:0.84rem;color:var(--text-2);display:block;margin-bottom:6px;">Alasan Penolakan (opsional)</label>
@@ -54,7 +116,6 @@ function decisionSectionHtml(flag) {
       </div>`;
   }
 
-  // ditolak
   return `
     <div class="flag-card">
       <h3>Keputusan Review</h3>
@@ -65,13 +126,13 @@ function decisionSectionHtml(flag) {
     </div>`;
 }
 
-function renderDetail() {
-  const id = getFlagIdFromUrl();
-  const flag = id ? getFlag(id) : null;
-  const root = $('#flagDetailRoot');
+function renderFlagDetail() {
+  const flag = currentFlagId ? getFlag(currentFlagId) : null;
+  const root = $f('#flagDetailRoot');
+  if (!root) return;
 
   if (!flag) {
-    root.innerHTML = `<div class="flag-card"><p>Flag dengan ID tersebut tidak ditemukan. <a href="flag-list.html">Kembali ke daftar flag</a>.</p></div>`;
+    root.innerHTML = `<div class="flag-card"><p>Flag tidak ditemukan.</p></div>`;
     return;
   }
 
@@ -113,10 +174,10 @@ function renderDetail() {
       </div>
     </div>
 
-    ${decisionSectionHtml(flag)}
+    ${flagDecisionSectionHtml(flag)}
   `;
 
-  const approveBtn = $('#btnApprove');
+  const approveBtn = $f('#btnApproveFlag');
   if (approveBtn) {
     approveBtn.addEventListener('click', () => {
       updateFlag(flag.id, {
@@ -125,45 +186,71 @@ function renderDetail() {
         reviewedBy: `${getCurrentUserName()} (Admin)`,
       });
       toast('Flag disetujui — tersimpan sebagai draft revisi KB ✅');
-      renderDetail();
+      renderFlagDetail();
+      renderFlagTable();
     });
   }
-  const rejectBtn = $('#btnReject');
-  if (rejectBtn) rejectBtn.addEventListener('click', () => $('#rejectBox').classList.add('show'));
+  const rejectBtn = $f('#btnRejectFlag');
+  if (rejectBtn) rejectBtn.addEventListener('click', () => $f('#rejectBox').classList.add('show'));
 
-  const rejectCancel = $('#btnRejectCancel');
-  if (rejectCancel) rejectCancel.addEventListener('click', () => $('#rejectBox').classList.remove('show'));
+  const rejectCancel = $f('#btnRejectCancel');
+  if (rejectCancel) rejectCancel.addEventListener('click', () => $f('#rejectBox').classList.remove('show'));
 
-  const rejectConfirm = $('#btnRejectConfirm');
+  const rejectConfirm = $f('#btnRejectConfirm');
   if (rejectConfirm) {
     rejectConfirm.addEventListener('click', () => {
       updateFlag(flag.id, {
         status: 'ditolak',
-        rejectReason: $('#rejectReasonInput').value.trim(),
+        rejectReason: $f('#rejectReasonInput').value.trim(),
         reviewedAt: new Date().toISOString(),
         reviewedBy: `${getCurrentUserName()} (Admin)`,
       });
       toast('Flag ditolak');
-      renderDetail();
+      renderFlagDetail();
+      renderFlagTable();
     });
   }
 }
 
-// ---------- Toast ----------
-let toastTimer;
-function toast(msg) {
-  const t = $('#toast');
-  t.textContent = msg;
-  t.hidden = false;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (t.hidden = true), 2600);
+// ---------- Perpindahan tampilan Daftar ↔ Detail ----------
+function openFlagDetailView(id) {
+  currentFlagId = id;
+  $f('#flagView-list').hidden = true;
+  $f('#flagView-detail').hidden = false;
+  renderFlagDetail();
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  renderRoleButtons();
-  renderDetail();
+function backToFlagList() {
+  $f('#flagView-detail').hidden = true;
+  $f('#flagView-list').hidden = false;
+  currentFlagId = null;
+  renderFlagTable();
+}
 
-  document.querySelectorAll('.role-btn').forEach((b) => {
-    b.addEventListener('click', () => { setRole(b.dataset.role); renderRoleButtons(); renderDetail(); });
+// ---------- Wiring ----------
+document.addEventListener('DOMContentLoaded', () => {
+  if (!document.getElementById('flagBody')) return; // halaman tidak memuat sub-tab Flag
+
+  renderFlagListAll();
+
+  document.querySelectorAll('#aitab-flag .role-btn').forEach((b) => {
+    b.addEventListener('click', () => {
+      setRole(b.dataset.role);
+      renderFlagRoleButtons();
+      renderFlagScopeNote();
+      renderFlagTable();
+      if (!$f('#flagView-detail').hidden) renderFlagDetail();
+    });
   });
+
+  document.querySelectorAll('#statusTabs .chip').forEach((c) => {
+    c.addEventListener('click', () => {
+      document.querySelectorAll('#statusTabs .chip').forEach((x) => x.classList.remove('active'));
+      c.classList.add('active');
+      flagStatusFilter = c.dataset.status;
+      renderFlagTable();
+    });
+  });
+
+  $f('#flagBackToList').addEventListener('click', backToFlagList);
 });

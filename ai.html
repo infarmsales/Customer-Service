@@ -4,8 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Infarm CS — AI Chatbot</title>
-  <link rel="stylesheet" href="dashboard.css" />
-  <link rel="stylesheet" href="ai.css" />
+  <link rel="stylesheet" href="dashboard.css?v=2" />
+  <link rel="stylesheet" href="pesanan.css?v=2" />
+  <link rel="stylesheet" href="flag.css?v=2" />
+  <link rel="stylesheet" href="ai.css?v=2" />
 </head>
 <body>
   <div class="app">
@@ -42,9 +44,12 @@
       <!-- ======================= AI CONTENT ======================= -->
       <main class="ai">
         <div class="ai-tabbar">
-          <button class="ai-tab active">AI Chatbot</button>
-          <a class="ai-tab-link" href="flag-list.html">🚩 Flag Koreksi Jawaban AI <span class="tab-badge" id="flagPendingBadge" hidden>0</span></a>
+          <button class="ai-tab" data-aitab="chatbot">AI Chatbot</button>
+          <button class="ai-tab" data-aitab="flag">🚩 Flag Koreksi Jawaban AI <span class="tab-badge" id="flagPendingBadge" hidden>0</span></button>
         </div>
+
+        <!-- ======================= SUB-HALAMAN: AI CHATBOT ======================= -->
+        <div class="ai-tabpanel" id="aitab-chatbot">
 
         <div class="ai-grid">
 
@@ -183,6 +188,75 @@
             </div>
           </div>
         </section>
+
+        </div>
+        <!-- ==================== /SUB-HALAMAN: AI CHATBOT ==================== -->
+
+        <!-- ======================= SUB-HALAMAN: FLAG KOREKSI ======================= -->
+        <div class="ai-tabpanel" id="aitab-flag" hidden>
+
+          <!-- Tampilan: Daftar Flag -->
+          <section class="flag-embed-view" id="flagView-list">
+            <div class="flag-headbar">
+              <div>
+                <h2>Daftar Flag Koreksi Jawaban AI</h2>
+                <p class="flag-sub">Laporan CS atas jawaban AI yang salah/kurang tepat — menunggu review sebelum dijadikan revisi Knowledge Base.</p>
+              </div>
+            </div>
+
+            <div class="role-switch-box">
+              <span class="role-hint">Tampilan sebagai:</span>
+              <div class="role-switch">
+                <button class="role-btn" data-role="cs">🧑‍💼 CS Agent</button>
+                <button class="role-btn" data-role="admin">🛡️ Admin / Owner</button>
+              </div>
+              <span class="role-hint" id="roleHint"></span>
+            </div>
+
+            <div class="filter-row sub flag-filter">
+              <div class="chip-tabs" id="statusTabs">
+                <button class="chip active" data-status="all">Semua <b id="cAll">0</b></button>
+                <button class="chip" data-status="menunggu">Menunggu Review <b id="cMenunggu">0</b></button>
+                <button class="chip" data-status="disetujui">Disetujui <b id="cDisetujui">0</b></button>
+                <button class="chip" data-status="ditolak">Ditolak <b id="cDitolak">0</b></button>
+              </div>
+            </div>
+
+            <div class="ai-note" id="scopeNote"></div>
+
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Tanggal Flag</th>
+                    <th>Pesan Pelanggan</th>
+                    <th>Kategori</th>
+                    <th>Pelapor</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="flagBody"><!-- diisi ai-flag.js --></tbody>
+              </table>
+              <div class="empty-state" id="flagEmpty" hidden>
+                <div class="empty-ill">🚩</div><p>Belum ada flag koreksi.</p>
+              </div>
+            </div>
+
+            <div class="table-foot">
+              <span>Total <b id="flagTotal">0</b></span>
+            </div>
+          </section>
+
+          <!-- Tampilan: Detail Flag -->
+          <section class="flag-embed-view" id="flagView-detail" hidden>
+            <button class="back-link" id="flagBackToList" type="button">‹ Kembali ke Daftar Flag</button>
+            <div id="flagDetailRoot"><!-- diisi ai-flag.js --></div>
+          </section>
+
+        </div>
+        <!-- ==================== /SUB-HALAMAN: FLAG KOREKSI ==================== -->
+
       </main>
     </div>
   </div>
@@ -235,8 +309,9 @@
   </div>
 
   <div class="toast" id="toast" hidden></div>
-  <script src="rail.js"></script>
-  <script src="flag-store.js"></script>
-  <script src="ai.js"></script>
+  <script src="rail.js?v=2"></script>
+  <script src="flag-store.js?v=2"></script>
+  <script src="ai-flag.js?v=2"></script>
+  <script src="ai.js?v=2"></script>
 </body>
 </html>

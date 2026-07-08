@@ -162,13 +162,28 @@ function submitFlag(e) {
 
   closeFlagModal();
   updateFlagBadge();
+  if (typeof renderFlagListAll === 'function') renderFlagListAll(); // segarkan sub-tab Flag Koreksi
   toast('Flag koreksi terkirim — menunggu review Admin/Owner ✅');
+}
+
+// ---------- Sub-tab: AI Chatbot ↔ Flag Koreksi ----------
+function switchAiTab(name) {
+  document.querySelectorAll('.ai-tab').forEach((t) => t.classList.toggle('active', t.dataset.aitab === name));
+  $('#aitab-chatbot').hidden = name !== 'chatbot';
+  $('#aitab-flag').hidden = name !== 'flag';
+  if (name === 'flag' && typeof backToFlagList === 'function') backToFlagList();
 }
 
 // ---------- Wiring ----------
 document.addEventListener('DOMContentLoaded', () => {
   checkBackend();
   updateFlagBadge();
+
+  // Sub-tab AI Chatbot / Flag Koreksi
+  document.querySelectorAll('.ai-tab').forEach((t) => {
+    t.addEventListener('click', () => switchAiTab(t.dataset.aitab));
+  });
+  switchAiTab('chatbot');
 
   $('#askBtn').addEventListener('click', askAI);
 

@@ -1,6 +1,6 @@
 /* ===========================================================
    Infarm CS — Flag Koreksi Jawaban AI (data store bersama)
-   Dipakai oleh: ai.js, flag-list.js, flag-detail.js
+   Dipakai oleh: ai.js, ai-flag.js (sub-tab "Flag Koreksi" di ai.html)
    Penyimpanan: localStorage (sementara). Saat migrasi ke
    Supabase (lihat MIGRATION.md), ganti loadFlags/saveFlags/
    addFlag/updateFlag dengan query Supabase — nama fungsi &
