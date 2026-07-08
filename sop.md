@@ -13,6 +13,8 @@
 | Menjawab hanya untuk terlihat membantu jika dasar jawabannya tidak ada | Lebih baik jujur dan alihkan |
 | Menjawab dengan beracuan dengan riwayat pembicaraan sebelumnya | Supaya tetap terarah pembicaraan nya, jika tidak tahu alihkan ke CS manusia|
 | Kategorikan chat secara otomatis dan status kasus sudah selesai atau belum | memudahkan CS manusia untuk menjawab chat yang dialihkan|
-
-
+|  membalas chat harus kurang dari 15 menit, lebih cepat lebih baik | mengurangi persentase tingkat balasan cepat |
+| bubble chat atau balasan terakhir harus dari kita, tidak dari customer | mengurangi persentase balasan|
+| Pesan tidak boleh mengandung unsur SARA (Suku, Agama, Ras, Antargolongan) maupun pornografi | melanggar ketentuan marketplace|
+| Menghindari pengarahan transaksi offline atau mengarahkan pembeli ke platform lain di luar ekosistem resmi marketplace. Jika ada indikasi menanyakan pembelian di luar sistem, alihkan ke CS manusia| melanggar ketentuan marketplace|
 ---
