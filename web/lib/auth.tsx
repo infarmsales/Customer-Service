@@ -29,11 +29,13 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase/client";
 import { DEMO_USER } from "@/lib/db";
 import type { ProfileRow } from "@/lib/db";
+import { diamTerlaluLama, sesiKedaluwarsa, type SebabKeluar } from "@/lib/sesi";
 
 export type AuthStatus = "loading" | "in" | "out";
 
@@ -64,6 +66,14 @@ type AuthValue = {
    * dicari di tabel profiles.
    */
   authUser: { id: string; email: string | null } | null;
+  /**
+   * Terisi bila sesi diakhiri sendiri oleh pengaman SEC-018, bukan
+   * oleh tombol keluar. Dibaca halaman login supaya layar yang
+   * tiba-tiba kembali ke login tidak disangka console rusak —
+   * keluhan yang paling mahal, karena pengaman yang bekerja
+   * terlihat persis seperti kegagalan.
+   */
+  sebabKeluar: SebabKeluar | null;
   signIn: (email: string, password: string) => Promise<string | null>;
   signOut: () => Promise<void>;
 };
@@ -79,6 +89,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
   const [profileError, setProfileError] = useState<string | null>(null);
   const [authUser, setAuthUser] = useState<AuthValue["authUser"]>(null);
+  const [sebabKeluar, setSebabKeluar] = useState<SebabKeluar | null>(null);
+
+  /* Sentuhan terakhir di console. Ref, bukan state: nilainya berubah
+     pada setiap klik dan setiap ketikan, dan menjadikannya state
+     berarti merender ulang seluruh pohon komponen pada setiap huruf
+     yang diketik CS. */
+  /* null = belum pernah diisi. Sengaja BUKAN Date.now() di sini:
+     memanggilnya saat render membuat nilainya bergantung pada kapan
+     React kebetulan merender, dan eslint react-hooks/purity menolak
+     itu. Sengaja juga bukan 0, karena 0 akan terbaca sebagai "diam
+     sejak 1970" dan mengeluarkan orang seketika. */
+  const terakhirAktif = useRef<number | null>(null);
+
+  /**
+   * Akhiri sesi karena pengaman, bukan karena tombol keluar.
+   *
+   * Dideklarasikan SEBELUM useEffect di bawah dengan sengaja: effect
+   * itu menyebutnya di daftar dependensinya, dan daftar itu dibaca
+   * saat render — bukan saat effect berjalan.
+   */
+  const paksaKeluar = useCallback(async (sebab: SebabKeluar) => {
+    setSebabKeluar(sebab);
+    await getSupabase()?.auth.signOut();
+  }, []);
 
   useEffect(() => {
     if (isDemo) return;
@@ -129,20 +163,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setStatus("in");
     };
 
+    /* SEC-018 — satu-satunya pintu masuk ke status "in".
+       Ditaruh di sini, bukan hanya di getSession(), karena sesi juga
+       bisa tiba lewat TOKEN_REFRESHED: tab yang dibiarkan terbuka
+       semalaman menyegarkan tokennya sendiri berkali-kali, dan tanpa
+       pemeriksaan di jalur itu umur sesi tidak pernah ditagih. */
+    const terimaSesi = (session: {
+      user: { id: string; email?: string | null; last_sign_in_at?: string };
+    }) => {
+      const masukTerakhir = session.user.last_sign_in_at;
+      if (!masukTerakhir) {
+        console.warn(
+          "[auth] last_sign_in_at kosong — umur sesi tidak bisa dihitung, " +
+            "sesi dibiarkan hidup. Lihat lib/sesi.ts.",
+        );
+      }
+      if (sesiKedaluwarsa(masukTerakhir, new Date())) {
+        void paksaKeluar("umur");
+        return;
+      }
+      terakhirAktif.current = Date.now();
+      setAuthUser({ id: session.user.id, email: session.user.email ?? null });
+      void muatProfil(session.user.id);
+    };
+
     sb.auth.getSession().then(({ data }) => {
       if (batal) return;
-      if (data.session) {
-        const u = data.session.user;
-        setAuthUser({ id: u.id, email: u.email ?? null });
-        void muatProfil(u.id);
-      } else setStatus("out");
+      if (data.session) terimaSesi(data.session);
+      else setStatus("out");
     });
 
     const { data: sub } = sb.auth.onAuthStateChange((_event, session) => {
       if (batal) return;
       if (session) {
-        setAuthUser({ id: session.user.id, email: session.user.email ?? null });
-        void muatProfil(session.user.id);
+        setSebabKeluar(null);
+        terimaSesi(session);
       } else {
         setProfile(null);
         setProfileError(null);
@@ -155,7 +210,64 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       batal = true;
       sub.subscription.unsubscribe();
     };
-  }, [isDemo]);
+  }, [isDemo, paksaKeluar]);
+
+  /* -----------------------------------------------------------
+     SEC-018 lapis kedua — console yang ditinggal menyala.
+
+     Lapis pertama (umur sesi) tidak menangkap keadaan ini: tab
+     masih terbuka, tokennya masih disegarkan, dan 12 jam belum
+     tentu lewat. Yang menandainya hanya tidak adanya sentuhan.
+
+     Jalan hanya saat benar-benar sudah masuk, supaya tidak ada
+     pendengar peristiwa yang menggantung di halaman login.
+     ----------------------------------------------------------- */
+  useEffect(() => {
+    if (isDemo || status !== "in") return;
+
+    const tandai = () => {
+      terakhirAktif.current = Date.now();
+    };
+
+    /* Sesi yang sudah ada sebelum effect ini terpasang (mis. setelah
+       hot reload) belum punya penanda. Diisi sekarang, supaya
+       denyut pertama tidak membaca null dan mengira belum ada
+       sentuhan sama sekali. */
+    if (terakhirAktif.current === null) tandai();
+
+    const diamSekarang = () =>
+      terakhirAktif.current !== null &&
+      diamTerlaluLama(terakhirAktif.current, Date.now());
+
+    /* pointerdown & keydown, BUKAN mousemove: kursor yang tersenggol
+       meja atau digeser kucing bukan tanda ada orang yang bekerja,
+       dan mousemove akan membuat penghitung ini praktis tidak pernah
+       berbunyi. */
+    const peristiwa = ["pointerdown", "keydown", "wheel"] as const;
+    for (const p of peristiwa) window.addEventListener(p, tandai, { passive: true });
+
+    /* Diperiksa tiap menit, bukan lewat setTimeout sekali pasang.
+       Laptop yang ditutup menghentikan timer di banyak peramban,
+       jadi timer tunggal bisa terbangun jauh terlambat; perbandingan
+       jam dinding pada setiap denyut tidak bisa tertipu begitu. */
+    const denyut = window.setInterval(() => {
+      if (diamSekarang()) void paksaKeluar("diam");
+    }, 60_000);
+
+    /* Kembali ke tab sesudah laptop tidur: periksa segera, jangan
+       tunggu denyut berikutnya. */
+    const saatTerlihat = () => {
+      if (document.visibilityState !== "visible") return;
+      if (diamSekarang()) void paksaKeluar("diam");
+    };
+    document.addEventListener("visibilitychange", saatTerlihat);
+
+    return () => {
+      for (const p of peristiwa) window.removeEventListener(p, tandai);
+      document.removeEventListener("visibilitychange", saatTerlihat);
+      window.clearInterval(denyut);
+    };
+  }, [isDemo, status, paksaKeluar]);
 
   /** @returns pesan galat untuk ditampilkan, atau null bila berhasil. */
   const signIn = useCallback(async (email: string, password: string) => {
@@ -185,10 +297,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isDemo,
       profileError,
       authUser,
+      sebabKeluar,
       signIn,
       signOut,
     }),
-    [status, profile, profileError, authUser, isDemo, signIn, signOut],
+    [
+      status,
+      profile,
+      profileError,
+      authUser,
+      isDemo,
+      sebabKeluar,
+      signIn,
+      signOut,
+    ],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

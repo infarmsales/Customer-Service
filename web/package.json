@@ -30,7 +30,8 @@
     "tes0": "node --env-file-if-exists=.env.local scripts/tes0.mjs",
     "uji-input-type": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/uji-input-type.mjs",
     "tes-ambang": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/tes-ambang.mjs",
-    "uji-tunggakan": "node --experimental-strip-types scripts/uji-tunggakan.mjs"
+    "uji-tunggakan": "node --experimental-strip-types scripts/uji-tunggakan.mjs",
+    "uji-sesi": "node --experimental-strip-types scripts/uji-sesi.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.122.0",

@@ -16,9 +16,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { pesanKeluar } from "@/lib/sesi";
 
 export default function LoginForm() {
-  const { status, isDemo, signIn } = useAuth();
+  const { status, isDemo, signIn, sebabKeluar } = useAuth();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -107,6 +108,20 @@ export default function LoginForm() {
           className="mt-0 mb-5 rounded-xl border border-[#fecaca] bg-[#fef2f2] px-3.5 py-2.5 text-[0.88rem] text-[#b91c1c]"
         >
           {galat}
+        </p>
+      )}
+
+      {/* Sesi yang diakhiri pengaman SEC-018. Warnanya sengaja bukan
+          merah: ini bukan kesalahan pengguna dan bukan kegagalan
+          sistem, melainkan pengaman yang bekerja. Tanpa kalimat ini,
+          layar login yang muncul tiba-tiba akan dilaporkan sebagai
+          "console-nya rusak". */}
+      {!galat && sebabKeluar && (
+        <p
+          role="status"
+          className="mt-0 mb-5 rounded-xl border border-line bg-green-soft px-3.5 py-2.5 text-[0.88rem] text-secondary"
+        >
+          {pesanKeluar(sebabKeluar)}
         </p>
       )}
 
