@@ -169,6 +169,31 @@ function tiruan(jawaban, status = 200) {
   uji("token: kode 36004004 diteruskan", galat?.kode, "36004004");
 }
 
+{
+  /* Bentuk persis yang dikirim kirimPesan.ts. */
+  const t = tiruan({ code: 0, data: { message_id: "999" } });
+  const badan = { type: "TEXT", content: JSON.stringify({ content: "Halo kak" }), sender_role: "CUSTOMER_SERVICE" };
+  const hasil = await permintaanTiktok(
+    { path: "/customer_service/202606/conversations/123/messages", method: "POST", accessToken: "T", shopCipher: "ROW_abc", body: badan },
+    { fetchImpl: t.fetchImpl, kredensial: KRED, sekarang: () => 1234567890 },
+  );
+  const { url, init } = t.catat[0];
+  uji("kirim: POST", init.method, "POST");
+  uji("kirim: message_id dikembalikan", hasil.data.message_id, "999");
+  uji("kirim: content adalah JSON dalam STRING", JSON.parse(init.body).content, '{"content":"Halo kak"}');
+  uji(
+    "kirim: badan yang DIKIRIM persis badan yang DITANDATANGANI",
+    url.searchParams.get("sign"),
+    buatSign(
+      RAHASIA,
+      "/customer_service/202606/conversations/123/messages",
+      { app_key: "123456", timestamp: 1234567890, shop_cipher: "ROW_abc" },
+      init.body,
+    ),
+  );
+  uji("kirim: tanpa badan, sign berbeda (badan memang ikut)", url.searchParams.get("sign") === buatSign(RAHASIA, "/customer_service/202606/conversations/123/messages", { app_key: "123456", timestamp: 1234567890, shop_cipher: "ROW_abc" }), false);
+}
+
 console.log("\nAturan");
 const SEKARANG = 1_800_000_000;
 uji("epoch dipakai apa adanya", epochKeTanggal(1_900_000_000, SEKARANG).toISOString(), new Date(1_900_000_000_000).toISOString());
