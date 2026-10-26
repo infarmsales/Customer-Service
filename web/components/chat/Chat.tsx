@@ -1190,6 +1190,11 @@ export default function Chat() {
   }
 
   const meta = ACTION_META[active.action ?? "AUTO_REPLY"];
+  /* Saran yang berupa PEMBERITAHUAN (⏳ di luar jangkauan, 🔕 AI mati)
+     bukan kalimat untuk pembeli — memasukkannya ke kotak ketik lalu
+     menekan Kirim akan mengirim catatan internal ke pembeli TikTok. */
+  const saranBisaDipakai =
+    !!active.ai_suggestion && !/^\s*(⏳|🔕)/u.test(active.ai_suggestion);
 
   return (
     <div className="relative flex h-full min-h-0">
@@ -1339,34 +1344,53 @@ export default function Chat() {
             <span className="rounded-lg bg-green-mint px-2 py-0.5 text-[0.74rem] font-bold text-green-dark">
               🤖 AI Assist
             </span>
-            <span
-              className={`rounded-md px-1.75 py-0.5 text-[0.62rem] font-extrabold ${actionTagClass(active.action ?? "AUTO_REPLY")}`}
-            >
-              {active.action}
-            </span>
-            <span className="text-[0.76rem] text-muted">{meta.conf}</span>
+            {/* Lencana & tingkat keyakinan hanya bila memang ada
+                keputusan. Tanpa syarat ini percakapan tanpa action
+                (chat marketplace yang belum dinilai) menampilkan
+                lencana kosong dan "keyakinan tinggi" karangan. */}
+            {active.action && (
+              <>
+                <span
+                  className={`rounded-md px-1.75 py-0.5 text-[0.62rem] font-extrabold ${actionTagClass(active.action)}`}
+                >
+                  {active.action}
+                </span>
+                <span className="text-[0.76rem] text-muted">{meta.conf}</span>
+              </>
+            )}
           </div>
-          <p className="m-0 mb-2.5 rounded-xl bg-green-soft p-3 text-[0.86rem] leading-relaxed">
-            {active.ai_suggestion}
-          </p>
+          {active.ai_suggestion ? (
+            <p className="m-0 mb-2.5 rounded-xl bg-green-soft p-3 text-[0.86rem] leading-relaxed">
+              {active.ai_suggestion}
+            </p>
+          ) : (
+            <p className="m-0 mb-2.5 rounded-xl border border-dashed border-line p-3 text-[0.82rem] leading-relaxed text-muted">
+              Belum ada saran AI untuk percakapan ini.
+              {active.external_conversation_id
+                ? " Tekan \"Sinkronkan chat TikTok\" untuk menilai pesan terbaru dengan template (gratis), atau ✨ untuk saran Claude (berbayar)."
+                : " Tekan ✨ untuk meminta saran (bisa memanggil Claude — berbayar)."}
+            </p>
+          )}
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
+              disabled={!saranBisaDipakai}
               onClick={() => {
                 setDraft(active.ai_suggestion ?? "");
                 toast("Balasan AI dimasukkan ke kotak ketik");
               }}
-              className="cursor-pointer rounded-[10px] border-none bg-green px-3.5 py-1.5 text-[0.82rem] font-bold text-white transition hover:bg-green-hover"
+              className="cursor-pointer rounded-[10px] border-none bg-green px-3.5 py-1.5 text-[0.82rem] font-bold text-white transition hover:bg-green-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               Gunakan balasan
             </button>
             <button
               type="button"
+              disabled={!saranBisaDipakai}
               onClick={() => {
                 setDraft(active.ai_suggestion ?? "");
                 toast("Silakan edit balasan sebelum dikirim");
               }}
-              className="cursor-pointer rounded-[10px] border border-line bg-white px-3.5 py-1.5 text-[0.82rem] font-bold text-text-2 transition hover:bg-green-soft"
+              className="cursor-pointer rounded-[10px] border border-line bg-white px-3.5 py-1.5 text-[0.82rem] font-bold text-text-2 transition hover:bg-green-soft disabled:cursor-not-allowed disabled:opacity-50"
             >
               Edit dulu
             </button>

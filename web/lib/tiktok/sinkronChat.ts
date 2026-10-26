@@ -30,6 +30,7 @@ import { pembeliDari } from "./aturan.ts";
 import { permintaanTiktok } from "./klien.ts";
 import { gabungPesan, pesanKeChat, sudahTersambung } from "./pemetaChat.ts";
 import { daftarTokoTiktok, tokenTokoValid } from "./token.ts";
+import { saranUntuk, siapkanSaran } from "./saranGratis.ts";
 import type { DaftarPercakapan, DaftarPesan, PesanTiktok } from "./tipe.ts";
 
 const MAKS_HALAMAN_PESAN = 5;
@@ -43,7 +44,12 @@ export type HasilToko = {
   galat?: string;
 };
 
-type Tersimpan = { id: string; external_conversation_id: string; messages: ChatMessage[] | null };
+type Tersimpan = {
+  id: string;
+  external_conversation_id: string;
+  messages: ChatMessage[] | null;
+  ai_suggestion: string | null;
+};
 
 async function tarikPesan(
   conversationId: string,
@@ -92,7 +98,7 @@ async function sinkronSatuToko(t: { id: string; shop_name: string | null; extern
     const sb = getSupabaseAdmin();
     const { data: ada, error } = await sb
       .from("conversations")
-      .select("id, external_conversation_id, messages")
+      .select("id, external_conversation_id, messages, ai_suggestion")
       .eq("platform", "tiktok")
       .in(
         "external_conversation_id",
@@ -106,14 +112,21 @@ async function sinkronSatuToko(t: { id: string; shop_name: string | null; extern
       const pesanLama = Array.isArray(lama?.messages) ? lama.messages : [];
       const idTersimpan = new Set(pesanLama.map((m) => m.idEksternal).filter((x): x is string => !!x));
 
-      /* Pesan terakhir sudah tersimpan -> tidak ada yang berubah. */
-      if (lama && c.latest_message?.id && idTersimpan.has(c.latest_message.id)) continue;
+      /* Pesan terakhir sudah tersimpan -> tidak ada yang berubah.
+         Kecuali sarannya masih kosong (percakapan yang tersimpan
+         sebelum saran gratis ada): hitung saran tanpa menarik ulang
+         pesan dari TikTok. */
+      const tidakBerubah = !!lama && !!c.latest_message?.id && idTersimpan.has(c.latest_message.id);
+      if (tidakBerubah && lama.ai_suggestion) continue;
 
-      const mentah = await tarikPesan(c.id as string, akses, idTersimpan);
+      const mentah = tidakBerubah ? [] : await tarikPesan(c.id as string, akses, idTersimpan);
       const pesan = gabungPesan(
         pesanLama,
         mentah.map(pesanKeChat).filter((m): m is ChatMessage => m !== null),
       );
+      const saran = saranUntuk(pesan);
+      /* Tidak berubah dan memang belum ada pesan pembeli: tidak ada yang perlu ditulis. */
+      if (tidakBerubah && !saran) continue;
       const terakhir = pesan.at(-1)?.timestamp ?? new Date((c.create_time ?? Date.now() / 1000) * 1000).toISOString();
       const pembeli = pembeliDari(c.participants);
 
@@ -127,6 +140,11 @@ async function sinkronSatuToko(t: { id: string; shop_name: string | null; extern
         unread: (c.unread_count ?? 0) > 0,
         last_message_at: terakhir,
         updated_at: new Date().toISOString(),
+        /* Saran gratis (Gerbang -0.5, 0, template). Hanya mengisi
+           panel saran — tidak ada yang dikirim ke pembeli. */
+        ...(saran
+          ? { ai_suggestion: saran.ai_suggestion, action: saran.action, template_code: saran.template_code }
+          : {}),
       };
 
       if (lama) {
@@ -153,6 +171,8 @@ async function sinkronSatuToko(t: { id: string; shop_name: string | null; extern
 /** Semua toko TikTok aktif, berurutan. Tidak melempar karena satu toko. */
 export async function sinkronChatTiktok(): Promise<HasilToko[]> {
   const toko = (await daftarTokoTiktok()).filter((t) => t.is_active);
+  /* Template & kata sensitif dari tabel, sekali untuk semua toko. */
+  await siapkanSaran();
   const hasil: HasilToko[] = [];
   for (const t of toko) hasil.push(await sinkronSatuToko(t));
   return hasil;
