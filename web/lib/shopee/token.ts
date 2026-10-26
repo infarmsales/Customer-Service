@@ -216,9 +216,16 @@ export async function daftarToko(): Promise<TokoUntukLayar[]> {
   return (data ?? []) as unknown as TokoUntukLayar[];
 }
 
-/** Semua toko aktif — untuk sinkronisasi (Fase 4). Tanpa token. */
+/**
+ * Semua toko SHOPEE aktif — untuk sinkronisasi (Fase 4). Tanpa token.
+ *
+ * Penyaring platform wajib sejak toko TikTok ikut tinggal di tabel
+ * yang sama (26 Okt 2026): tanpa itu cron Shopee akan me-refresh token
+ * TikTok ke server Shopee, dan galat error_auth-nya bisa menonaktifkan
+ * toko TikTok yang sebenarnya sehat.
+ */
 export async function daftarTokoAktif(): Promise<TokoUntukLayar[]> {
-  return (await daftarToko()).filter((t) => t.is_active);
+  return (await daftarToko()).filter((t) => t.is_active && t.platform === PLATFORM);
 }
 
 /* -----------------------------------------------------------
@@ -227,7 +234,14 @@ export async function daftarTokoAktif(): Promise<TokoUntukLayar[]> {
 
 async function bacaBaris(id: string): Promise<BarisToken> {
   const sb = getSupabaseAdmin();
-  const { data, error } = await sb.from(TABEL).select(KOLOM_TOKEN).eq("id", id).maybeSingle();
+  /* platform ikut disaring: id baris TikTok yang tersasar ke sini harus
+     berakhir "tidak ditemukan", bukan di-refresh ke server Shopee. */
+  const { data, error } = await sb
+    .from(TABEL)
+    .select(KOLOM_TOKEN)
+    .eq("id", id)
+    .eq("platform", PLATFORM)
+    .maybeSingle();
   if (error) throw new GalatToko("database", error.message);
   if (!data) throw new GalatToko("tidak_ditemukan", `Toko ${id} tidak ada.`);
   return data as unknown as BarisToken;

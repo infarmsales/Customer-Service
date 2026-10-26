@@ -20,3 +20,6 @@ npm-debug.log*
 
 # Preferensi editor pribadi (tema, warna jendela) — tiap orang beda
 .vscode/
+
+# ===== Dokumentasi pihak ketiga mentah (zip) — hanya untuk dibaca lokal =====
+_referensi/
