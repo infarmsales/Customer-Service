@@ -36,6 +36,7 @@ import { actionTagClass } from "@/components/ai/actionTag";
 import { DemoNotice } from "@/components/ui/Bits";
 import IntegrateModal, { type PlatformName } from "./IntegrateModal";
 import SimulasiPesan from "./SimulasiPesan";
+import SinkronTiktok from "./SinkronTiktok";
 import PapanCroscek from "./PapanCroscek";
 import {
   appendMessage,
@@ -430,6 +431,7 @@ function ConversationsPanel({
       </div>
 
       <SimulasiPesan jumlahSimulasi={jumlahSimulasi} />
+      <SinkronTiktok />
 
       {/* Jalan kembali ke papan yang disembunyikan. Tanpa tombol
           ini, menutup papan berarti kehilangan daftarnya untuk
@@ -1048,9 +1050,20 @@ export default function Chat() {
     setOverlay(null);
   };
 
+  /* Percakapan hasil sinkronisasi marketplace (TikTok, 26 Okt 2026).
+     Mengirim ke marketplace belum dibangun, jadi appendMessage() di
+     sini hanya akan menulis ke database kita — CS akan mengira
+     pembeli menerima balasannya padahal tidak. Kirim ditutup sampai
+     tahap kirim pesan disetujui. */
+  const belumTersambung = !!active?.external_conversation_id;
+
   const kirim = () => {
     const text = draft.trim();
     if (!active) return;
+    if (belumTersambung) {
+      toast("Balas dari Seller Center dulu — kirim ke TikTok belum tersambung");
+      return;
+    }
     if (!text) {
       toast("Tulis pesan dulu, Kak");
       return;
@@ -1356,8 +1369,16 @@ export default function Chat() {
             </button>
           </div>
 
+          {belumTersambung && (
+            <p className="m-0 mb-2 rounded-xl border border-dashed border-[#f59e0b] bg-[#fffbeb] px-3 py-2 text-[0.78rem] text-[#92400e]">
+              <b>Chat dari TikTok — baca saja.</b> Mengirim balasan ke TikTok belum tersambung; balas dari
+              Seller Center. Tekan &quot;Sinkronkan chat TikTok&quot; untuk menarik pesan terbaru.
+            </p>
+          )}
+
           <textarea
             value={draft}
+            disabled={belumTersambung}
             maxLength={600}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
@@ -1384,7 +1405,8 @@ export default function Chat() {
             <button
               type="button"
               onClick={kirim}
-              className="cursor-pointer rounded-xl border-none bg-green px-5 py-2 font-bold text-white transition hover:bg-green-hover"
+              disabled={belumTersambung}
+              className="cursor-pointer rounded-xl border-none bg-green px-5 py-2 font-bold text-white transition hover:bg-green-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               Kirim
             </button>

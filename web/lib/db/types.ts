@@ -67,6 +67,13 @@ export type ChatMessage = {
    * lampirannya.
    */
   lampiran?: Lampiran[];
+  /**
+   * Id pesan di marketplace (TikTok: message id). Hanya ada pada
+   * pesan hasil sinkronisasi; dipakai untuk menggabungkan hasil
+   * sinkronisasi berulang tanpa menggandakan pesan. Opsional, jadi
+   * pesan lama dan simulasi tetap sah tanpa migrasi.
+   */
+  idEksternal?: string;
 };
 
 /** Satu berkas yang menempel pada sebuah pesan. */
@@ -123,6 +130,14 @@ export type ConversationRow = {
    * Lihat supabase/handover-jeda-ai.sql.
    */
   ai_paused_until: string | null;
+  /**
+   * Id percakapan di marketplace (migrasi 20261026150000). Terisi =
+   * percakapan ini hasil sinkronisasi dari marketplace sungguhan, dan
+   * balasan yang diketik di console BELUM terkirim ke sana.
+   * Opsional: database yang belum menjalankan migrasi tidak punya
+   * kolomnya sama sekali.
+   */
+  external_conversation_id?: string | null;
 };
 
 /**

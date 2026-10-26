@@ -21,6 +21,7 @@
 import { buatSign, queryBertanda, stringUntukSign } from "../lib/tiktok/tandaTangan.ts";
 import { GalatTiktok, mintaToken, permintaanTiktok } from "../lib/tiktok/klien.ts";
 import { epochKeTanggal, pembeliDari, teksPesan, tokoSah } from "../lib/tiktok/aturan.ts";
+import { gabungPesan, pesanKeChat, sudahTersambung } from "../lib/tiktok/pemetaChat.ts";
 
 let lulus = 0;
 let gagal = 0;
@@ -191,6 +192,41 @@ uji("teks: ORDER_CARD", teksPesan({ type: "ORDER_CARD", content: '{"order_id":"5
 uji("teks: ORDER_CARD tanpa id", teksPesan({ type: "ORDER_CARD", content: "{}" }), "[Kartu pesanan]");
 uji("teks: JSON rusak tidak melempar", teksPesan({ type: "TEXT", content: "{rusak" }), "{rusak");
 uji("teks: tipe asing", teksPesan({ type: "BARU", content: "{}" }), "[BARU]");
+
+console.log("\nPemeta chat -> conversations");
+const pesanPembeli = { id: "m1", type: "TEXT", content: '{"content":"halo kak"}', create_time: 1_800_000_000, is_visible: true, sender: { role: "BUYER" } };
+const pesanRobot = { id: "m2", type: "TEXT", content: '{"content":"Obrolan dialihkan"}', create_time: 1_800_000_060, is_visible: true, sender: { role: "ROBOT" } };
+uji("BUYER -> user", pesanKeChat(pesanPembeli)?.role, "user");
+uji("ROBOT -> cs (bukan assistant)", pesanKeChat(pesanRobot)?.role, "cs");
+uji("SHOP -> cs", pesanKeChat({ ...pesanPembeli, sender: { role: "SHOP" } })?.role, "cs");
+uji("isi & waktu", [pesanKeChat(pesanPembeli)?.content, pesanKeChat(pesanPembeli)?.timestamp], ["halo kak", new Date(1_800_000_000_000).toISOString()]);
+uji("idEksternal dibawa", pesanKeChat(pesanPembeli)?.idEksternal, "m1");
+uji("is_visible false dibuang", pesanKeChat({ ...pesanPembeli, is_visible: false }), null);
+uji("tanpa id dibuang", pesanKeChat({ ...pesanPembeli, id: undefined }), null);
+uji(
+  "IMAGE -> lampiran gambar",
+  pesanKeChat({ id: "m3", type: "IMAGE", content: '{"url":"https://x/y.jpg"}', create_time: 1, sender: { role: "BUYER" } })?.lampiran,
+  [{ url: "https://x/y.jpg", jenis: "gambar" }],
+);
+uji(
+  "IMAGE tanpa url http -> tanpa lampiran",
+  pesanKeChat({ id: "m4", type: "IMAGE", content: '{"url":"javascript:1"}', create_time: 1, sender: { role: "BUYER" } })?.lampiran,
+  undefined,
+);
+
+const a = { role: "user", content: "lama", timestamp: "2027-01-15T08:00:00.000Z", idEksternal: "a" };
+const b1 = { role: "cs", content: "versi lama", timestamp: "2027-01-15T08:01:00.000Z", idEksternal: "b" };
+const b2 = { ...b1, content: "versi baru" };
+const c = { role: "user", content: "baru", timestamp: "2027-01-15T08:02:00.000Z", idEksternal: "c" };
+const lokal = { role: "cs", content: "catatan lokal", timestamp: "2027-01-15T08:01:30.000Z" };
+uji("gabung: tidak menggandakan id yang sama", gabungPesan([a, b1], [b2, c]).map((m) => m.content), ["lama", "versi baru", "baru"]);
+uji("gabung: pesan lama di luar halaman dipertahankan", gabungPesan([a], [c]).map((m) => m.idEksternal), ["a", "c"]);
+uji("gabung: catatan tanpa id dipertahankan & urut waktu", gabungPesan([a, lokal], [c]).map((m) => m.content), ["lama", "catatan lokal", "baru"]);
+uji("gabung: masukan tidak berurutan diurutkan", gabungPesan([], [c, a]).map((m) => m.idEksternal), ["a", "c"]);
+uji("gabung dua kali = sama (idempoten)", gabungPesan(gabungPesan([a], [b2, c]), [b2, c]).length, 3);
+
+uji("sudahTersambung: ya", sudahTersambung([{ id: "x" }, { id: "b" }], new Set(["b"])), true);
+uji("sudahTersambung: tidak", sudahTersambung([{ id: "x" }], new Set(["b"])), false);
 
 console.log(`\n${lulus} lulus, ${gagal} gagal\n`);
 process.exit(gagal === 0 ? 0 : 1);

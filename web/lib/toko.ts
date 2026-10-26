@@ -63,6 +63,11 @@ export const DAFTAR_TOKO: Toko[] = [
   { nama: "Infarm Semarang", platform: "shopee", status: "away" },
   { nama: "Infarm Bali", platform: "tiktok", status: "online" },
   { nama: "Infarm Surabaya", platform: "lazada", status: "offline" },
+  /* Toko uji TikTok (Partner Center → Toko Pengembangan), 26 Okt 2026.
+     Namanya HARUS sama dengan marketplace_shops.shop_name, karena itu
+     yang ditulis sinkronisasi chat ke conversations.shop_name. Hapus
+     baris ini begitu toko TikTok Infarm yang sebenarnya tersambung. */
+  { nama: "SANDBOX_ID7698393095713998598", platform: "tiktok", status: "online" },
 ];
 
 /** Nilai `activeShop` yang berarti "jangan saring toko sama sekali". */
