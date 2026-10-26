@@ -1050,22 +1050,58 @@ export default function Chat() {
     setOverlay(null);
   };
 
-  /* Percakapan hasil sinkronisasi marketplace (TikTok, 26 Okt 2026).
-     Mengirim ke marketplace belum dibangun, jadi appendMessage() di
-     sini hanya akan menulis ke database kita — CS akan mengira
-     pembeli menerima balasannya padahal tidak. Kirim ditutup sampai
-     tahap kirim pesan disetujui. */
-  const belumTersambung = !!active?.external_conversation_id;
+  /* Percakapan hasil sinkronisasi marketplace.
+     - TikTok: balasan dikirim SUNGGUHAN lewat /api/tiktok/kirim
+       (disetujui 26 Okt 2026) dan baru dicatat setelah TikTok
+       menerimanya.
+     - Marketplace lain yang kelak ikut disinkronkan: Kirim ditutup,
+       karena appendMessage() saja hanya menulis ke database kita dan
+       CS akan mengira pembeli menerima balasannya. */
+  const dariMarketplace = !!active?.external_conversation_id;
+  const viaTiktok = dariMarketplace && active?.platform === "tiktok";
+  const belumTersambung = dariMarketplace && !viaTiktok;
+  const [mengirim, setMengirim] = useState(false);
+
+  const kirimKeTiktok = async (id: string, text: string) => {
+    setMengirim(true);
+    try {
+      const r = await fetch("/api/tiktok/kirim", {
+        method: "POST",
+        headers: await headerBerSesi(),
+        body: JSON.stringify({ conversationId: id, teks: text }),
+      });
+      const d = (await r.json()) as { ok?: boolean; messageId?: string; error?: string };
+      if (!r.ok || !d.ok) {
+        /* Draf DIBIARKAN supaya CS bisa memperbaiki & mengirim ulang. */
+        toast(`Belum terkirim: ${d.error ?? `HTTP ${r.status}`}`);
+        return;
+      }
+      appendMessage(id, text, d.messageId || undefined);
+      setDraft("");
+      toast("Terkirim ke TikTok");
+    } catch (e) {
+      /* Jaringan putus SESUDAH permintaan berangkat bisa berarti
+         TikTok sudah menerimanya. Sinkronkan dulu sebelum mengirim
+         ulang, supaya pembeli tidak menerima pesan dobel. */
+      toast(`Status tidak pasti (${(e as Error).message}). Sinkronkan dulu sebelum mengirim ulang.`);
+    } finally {
+      setMengirim(false);
+    }
+  };
 
   const kirim = () => {
     const text = draft.trim();
     if (!active) return;
     if (belumTersambung) {
-      toast("Balas dari Seller Center dulu — kirim ke TikTok belum tersambung");
+      toast("Balas dari Seller Center dulu — kirim ke marketplace ini belum tersambung");
       return;
     }
     if (!text) {
       toast("Tulis pesan dulu, Kak");
+      return;
+    }
+    if (viaTiktok) {
+      if (!mengirim) void kirimKeTiktok(active.id, text);
       return;
     }
     appendMessage(active.id, text);
@@ -1371,14 +1407,20 @@ export default function Chat() {
 
           {belumTersambung && (
             <p className="m-0 mb-2 rounded-xl border border-dashed border-[#f59e0b] bg-[#fffbeb] px-3 py-2 text-[0.78rem] text-[#92400e]">
-              <b>Chat dari TikTok — baca saja.</b> Mengirim balasan ke TikTok belum tersambung; balas dari
-              Seller Center. Tekan &quot;Sinkronkan chat TikTok&quot; untuk menarik pesan terbaru.
+              <b>Chat marketplace — baca saja.</b> Mengirim balasan ke marketplace ini belum tersambung; balas
+              dari Seller Center.
+            </p>
+          )}
+          {viaTiktok && (
+            <p className="m-0 mb-2 rounded-xl border border-[#bbf7d0] bg-green-soft px-3 py-2 text-[0.78rem] text-green-dark">
+              <b>Balasan dikirim langsung ke pembeli di TikTok.</b> Pesan pembeli yang baru masuk ditarik
+              dengan tombol &quot;Sinkronkan chat TikTok&quot;.
             </p>
           )}
 
           <textarea
             value={draft}
-            disabled={belumTersambung}
+            disabled={belumTersambung || mengirim}
             maxLength={600}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
@@ -1405,10 +1447,10 @@ export default function Chat() {
             <button
               type="button"
               onClick={kirim}
-              disabled={belumTersambung}
+              disabled={belumTersambung || mengirim}
               className="cursor-pointer rounded-xl border-none bg-green px-5 py-2 font-bold text-white transition hover:bg-green-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Kirim
+              {mengirim ? "Mengirim…" : viaTiktok ? "Kirim ke TikTok" : "Kirim"}
             </button>
           </div>
         </div>

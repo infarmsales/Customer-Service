@@ -318,9 +318,12 @@ export function markRead(id: string) {
  * dan itulah satu-satunya penanda yang dipakai untuk menutup
  * eskalasi. Lihat ChatMessage di lib/db/types.ts.
  */
-export function appendMessage(id: string, content: string) {
+export function appendMessage(id: string, content: string, idEksternal?: string) {
   const now = new Date().toISOString();
-  const msg: ChatMessage = { role: "cs", content, timestamp: now };
+  /* idEksternal: id pesan dari marketplace bila balasannya sudah
+     benar-benar terkirim ke sana (TikTok). Sinkronisasi berikutnya
+     mengenali id ini dan tidak menambahkan pesan yang sama lagi. */
+  const msg: ChatMessage = { role: "cs", content, timestamp: now, ...(idEksternal ? { idEksternal } : {}) };
 
   const target = state.conversations.find((c) => c.id === id);
   if (!target) return;
