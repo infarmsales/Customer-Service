@@ -36,9 +36,11 @@ function kosong(): Response {
   return new Response(null, { status: 200 });
 }
 
-/** Kunci yang boleh menandatangani: sandbox dan (bila disetel) live. */
+/** Kunci yang boleh menandatangani: sandbox, live, dan "Test Push
+    Partner Key" dari Console (Get Test Push) — tombol Push Test Data
+    menandatangani dengan kunci itu, yang bisa berbeda dari keduanya. */
 function daftarKunci(): string[] {
-  return [process.env.SHOPEE_PARTNER_KEY, process.env.SHOPEE_LIVE_PARTNER_KEY]
+  return [process.env.SHOPEE_PARTNER_KEY, process.env.SHOPEE_LIVE_PARTNER_KEY, process.env.SHOPEE_TEST_PUSH_KEY]
     .map((k) => (k ?? "").trim())
     .filter((k) => k.length > 0);
 }
