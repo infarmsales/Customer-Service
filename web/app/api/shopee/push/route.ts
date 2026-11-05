@@ -45,6 +45,26 @@ function daftarKunci(): string[] {
     .filter((k) => k.length > 0);
 }
 
+/** Bentuk webchat_push yang dilewati — HANYA nama field, jenis, dan
+    apakah id-nya angka. Tidak pernah isi pesan, nama, atau nilai id:
+    log Vercel bukan tempat data pembeli. */
+function bentukWebchat(json: unknown): Record<string, unknown> {
+  const j = (json ?? {}) as { shop_id?: unknown; data?: { type?: unknown; content?: unknown } | null };
+  const c = j.data?.content;
+  const isi = c && typeof c === "object" ? (c as Record<string, unknown>) : null;
+  const angka = (v: unknown) => /^\d{1,30}$/.test(typeof v === "number" ? String(v) : typeof v === "string" ? v.trim() : "");
+  return {
+    kunciAkar: Object.keys((json ?? {}) as object),
+    tipe: j.data?.type,
+    jenisContent: c === null ? "null" : Array.isArray(c) ? "array" : typeof c,
+    kunciContent: isi ? Object.keys(isi) : [],
+    message_type: isi?.message_type,
+    conversationIdAngka: angka(isi?.conversation_id),
+    messageIdAda: typeof isi?.message_id === "string" ? isi.message_id.trim() !== "" : typeof isi?.message_id === "number",
+    shopIdAngka: angka(j.shop_id) || angka(isi?.shop_id) || angka(isi?.to_shop_id),
+  };
+}
+
 export async function POST(req: Request) {
   const bodyMentah = await req.text();
   const url = (process.env.SHOPEE_PUSH_URL ?? "").trim() || URL_BAWAAN;
@@ -67,7 +87,7 @@ export async function POST(req: Request) {
   if (!pesan) {
     /* Push sah tapi bukan pesan chat (kode lain, notifikasi). Dicatat
        kodenya saja supaya terlihat di log Vercel saat uji. */
-    console.info("[shopee/push] diterima, tidak diproses", { kode });
+    console.info("[shopee/push] diterima, tidak diproses", { kode, ...(kode === 10 ? bentukWebchat(json) : {}) });
     return kosong();
   }
 
