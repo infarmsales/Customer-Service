@@ -165,3 +165,55 @@ export function kodeTokenHangus(kode: string | null | undefined): boolean {
       return false;
   }
 }
+
+/* -----------------------------------------------------------
+   URL balik otorisasi: akun toko ATAU akun utama
+   ----------------------------------------------------------- */
+
+/** Batas toko yang diterima dari satu otorisasi akun utama. */
+export const BATAS_TOKO_AKUN_UTAMA = 50;
+
+const ANGKA_ID = /^\d{1,20}$/;
+
+export type BalikOtorisasi =
+  | { jenis: "toko"; code: string; shopId: string }
+  | { jenis: "akun_utama"; code: string; mainAccountId: string };
+
+/**
+ * Baca parameter URL balik dari Shopee (docs/shopee-api/shop.auth_partner.md):
+ *
+ *   ?code=...&shop_id=...          login dengan akun toko — satu toko
+ *   ?code=...&main_account_id=...  login dengan akun utama — bisa banyak
+ *                                  toko, daftarnya baru diketahui dari
+ *                                  shop_id_list di jawaban token/get
+ *
+ * shop_id didahulukan bila keduanya ada: jalur satu toko adalah yang
+ * sudah terbukti. null = parameter kurang atau bukan angka.
+ */
+export function bacaBalikOtorisasi(p: URLSearchParams): BalikOtorisasi | null {
+  const code = (p.get("code") ?? "").trim();
+  if (!code) return null;
+  const shopId = (p.get("shop_id") ?? "").trim();
+  if (ANGKA_ID.test(shopId)) return { jenis: "toko", code, shopId };
+  const mainAccountId = (p.get("main_account_id") ?? "").trim();
+  if (ANGKA_ID.test(mainAccountId)) return { jenis: "akun_utama", code, mainAccountId };
+  return null;
+}
+
+/**
+ * shop_id_list dari token/get -> daftar shop_id teks: hanya angka
+ * positif, tanpa kembar, urutan dipertahankan, paling banyak
+ * BATAS_TOKO_AKUN_UTAMA. Nilai rusak dibuang satuan, tidak
+ * menggagalkan seluruh daftar.
+ */
+export function daftarTokoAkunUtama(list: unknown): string[] {
+  if (!Array.isArray(list)) return [];
+  const hasil: string[] = [];
+  for (const v of list) {
+    const s = typeof v === "number" && Number.isSafeInteger(v) && v > 0 ? String(v) : typeof v === "string" ? v.trim() : "";
+    if (!ANGKA_ID.test(s) || /^0+$/.test(s) || hasil.includes(s)) continue;
+    hasil.push(s);
+    if (hasil.length >= BATAS_TOKO_AKUN_UTAMA) break;
+  }
+  return hasil;
+}

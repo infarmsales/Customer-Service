@@ -38,7 +38,8 @@
     "uji-shopee-pemeta": "node --conditions=react-server --experimental-strip-types scripts/uji-shopee-pemeta.mjs",
     "uji-shopee-push": "node --experimental-strip-types scripts/uji-shopee-push.mjs",
     "uji-tiktok":"node --conditions=react-server --experimental-strip-types scripts/uji-tiktok.mjs",
-    "uji-pesanan-pembeli":"node --experimental-strip-types scripts/uji-pesanan-pembeli.mjs"
+    "uji-pesanan-pembeli":"node --experimental-strip-types scripts/uji-pesanan-pembeli.mjs",
+    "uji-daftar-pesanan": "node --experimental-strip-types scripts/uji-daftar-pesanan.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.122.0",

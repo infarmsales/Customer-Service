@@ -43,6 +43,7 @@ import { GalatShopee, kredensialDariEnv, permintaanMentah } from "./klien.ts";
 import {
   LAMA_KUNCI_DETIK,
   UMUR_REFRESH_TOKEN_HARI,
+  daftarTokoAkunUtama,
   hitungKedaluwarsaToken,
   kodeTokenHangus,
   kunciMasihDipegang,
@@ -146,6 +147,32 @@ export async function tukarKode(code: string, shopId: string): Promise<TokenToko
     body: { code, shop_id: Number(shopId), partner_id: Number(kred.partnerId) },
   });
   return tokenDariJawaban(data, requestId);
+}
+
+/**
+ * Tukar `code` dari otorisasi AKUN UTAMA (Main account). Shopee
+ * mengembalikan SATU pasang token untuk semua toko yang dipilih, plus
+ * shop_id_list. Setiap toko lalu disimpan sebagai baris sendiri dengan
+ * token yang sama; penyegarannya per shop_id
+ * (docs/shopee-api/public.refresh_access_token.md: "masing-masing
+ * di-refresh terpisah").
+ *
+ * BELUM TERBUKTI dengan akun sungguhan: apakah refresh untuk toko A
+ * ikut menghanguskan refresh_token bersama milik toko B. Bila iya,
+ * toko B akan tampil "Perlu otorisasi ulang" sesudah refresh pertama.
+ * Dengan SATU toko yang dipilih di halaman Shopee, masalah ini tidak ada.
+ */
+export async function tukarKodeAkunUtama(
+  code: string,
+  mainAccountId: string,
+): Promise<{ token: TokenToko; shopIds: string[] }> {
+  const kred = kredensialDariEnv();
+  const { data, requestId } = await permintaanMentah<JawabanToken>({
+    path: "/api/v2/auth/token/get",
+    method: "POST",
+    body: { code, main_account_id: Number(mainAccountId), partner_id: Number(kred.partnerId) },
+  });
+  return { token: tokenDariJawaban(data, requestId), shopIds: daftarTokoAkunUtama(data.shop_id_list) };
 }
 
 /**

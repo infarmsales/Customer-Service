@@ -38,6 +38,8 @@ type Toko = {
   access_token_expires_at: string | null;
   refresh_token_expires_at: string | null;
   authorization_expires_at: string | null;
+  /** Sampai kapan pesanan toko ini sudah ditarik; null = belum pernah. */
+  orders_synced_until?: string | null;
   updated_at: string;
 };
 
@@ -45,6 +47,11 @@ type Hasil = { shopee: "ok" | "gagal"; toko?: string; sebab?: string; catatan?: 
 
 const LABEL_SEBAB: Record<string, string> = {
   parameter_kurang: "Shopee kembali tanpa code atau shop_id.",
+  akun_utama_tanpa_toko:
+    "Login dengan akun utama berhasil, tetapi Shopee tidak menyebut toko mana pun. Hubungkan lagi dan " +
+    "pastikan toko yang dimaksud dicentang di halaman otorisasi Shopee.",
+  invalid_main_acount_id: "Kode otorisasi tidak cocok dengan akun utama. Coba hubungkan lagi.",
+  invalid_shop_id: "Kode otorisasi tidak cocok dengan toko. Coba hubungkan lagi.",
   invalid_code: "Kode otorisasi sudah kedaluwarsa atau sudah dipakai. Coba hubungkan lagi.",
   error_auth: "Kode otorisasi ditolak Shopee. Coba hubungkan lagi.",
   error_sign: "Tanda tangan ditolak — periksa partner key dan host.",
@@ -229,6 +236,10 @@ export default function TokoTerhubung() {
                   <dd className="m-0">{t.refresh_token_expires_at ? `sampai ${stempel(t.refresh_token_expires_at)}` : "—"}</dd>
                   <dt className="text-muted">Otorisasi toko</dt>
                   <dd className="m-0">{t.authorization_expires_at ? `sampai ${stempel(t.authorization_expires_at)}` : "—"}</dd>
+                  <dt className="text-muted">Pesanan tersinkron</dt>
+                  <dd className="m-0">
+                    {t.orders_synced_until ? `sampai ${stempel(t.orders_synced_until)}` : "belum pernah"}
+                  </dd>
                 </dl>
               </div>
               <span

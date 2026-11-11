@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/Bits";
 import { actionTagClass } from "@/components/ai/actionTag";
 import QuickChat, { type QcMessage, type QuickChatTarget } from "./QuickChat";
+import DaftarPesanan from "./DaftarPesanan";
 import {
   decideCancels,
   useCancelCount,
@@ -41,7 +42,7 @@ import {
 } from "@/lib/db";
 import type { Cancel, Refund, Review } from "@/lib/db/types";
 
-type TabKey = "penilaian" | "refund" | "cancel";
+type TabKey = "daftar" | "penilaian" | "refund" | "cancel";
 
 /* ---------------- Potongan kecil ---------------- */
 
@@ -678,7 +679,7 @@ function PanelCancel({ onChat }: { onChat: (c: Cancel) => void }) {
 /* ---------------- Halaman ---------------- */
 
 export default function Pesanan() {
-  const [tab, setTab] = useState<TabKey>("penilaian");
+  const [tab, setTab] = useState<TabKey>("daftar");
   const [chat, setChat] = useState<QuickChatTarget | null>(null);
   /* Riwayat Quick Chat per nomor pesanan — dulu objek global
      QC_THREADS di quickchat.js. Disimpan di sini, bukan di dalam
@@ -740,7 +741,8 @@ export default function Pesanan() {
       initialMessage: `Halo min, saya mau tanya soal pembatalan pesanan #${c.order}.`,
     });
 
-  const TABS: { key: TabKey; label: string; count: number }[] = [
+  const TABS: { key: TabKey; label: string; count?: number }[] = [
+    { key: "daftar", label: "Daftar Pesanan" },
     { key: "penilaian", label: "Pengelolaan Penilaian", count: reviews.length },
     { key: "refund", label: "Pesanan Pengembalian Dana", count: refunds.length },
     { key: "cancel", label: "Pesanan Dibatalkan", count: count.menunggu },
@@ -763,17 +765,25 @@ export default function Pesanan() {
             ].join(" ")}
           >
             {t.label}
-            <span className="rounded-lg bg-green-mint px-1.5 py-px text-[0.72rem] text-green-dark">
-              {t.count}
-            </span>
+            {t.count !== undefined && (
+              <span className="rounded-lg bg-green-mint px-1.5 py-px text-[0.72rem] text-green-dark">
+                {t.count}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
-      <DemoNotice
-        sumber="contoh"
-        detail="Ulasan, refund, dan pembatalan milik API pesanan marketplace — keputusan di sini tersimpan selama sesi ini saja dan belum dikirim."
-      />
+      {/* Daftar Pesanan membaca tabel orders asli; penanda "contoh"
+          hanya untuk tiga tab lainnya. */}
+      {tab !== "daftar" && (
+        <DemoNotice
+          sumber="contoh"
+          detail="Ulasan, refund, dan pembatalan milik API pesanan marketplace — keputusan di sini tersimpan selama sesi ini saja dan belum dikirim."
+        />
+      )}
+
+      {tab === "daftar" && <DaftarPesanan />}
 
       {tab === "penilaian" && <PanelPenilaian onChat={chatReview} />}
       {tab === "refund" && <PanelRefund onChat={chatRefund} />}

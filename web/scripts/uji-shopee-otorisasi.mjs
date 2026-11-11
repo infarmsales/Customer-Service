@@ -23,6 +23,9 @@
 
 import {
   AMBANG_EPOCH,
+  BATAS_TOKO_AKUN_UTAMA,
+  bacaBalikOtorisasi,
+  daftarTokoAkunUtama,
   MARGIN_SEGAR_MENIT,
   UMUR_ACCESS_TOKEN_DETIK,
   hitungKedaluwarsaToken,
@@ -130,6 +133,33 @@ console.log("\nkodeTokenHangus — dari daftar galat v2.public.refresh_access_to
   for (const k of ["error_server", "error_network", "error_param", "jaringan", "bukan_json", "http_502", "", null, undefined]) {
     uji(`${JSON.stringify(k)} = BUKAN hangus (jangan nonaktifkan toko)`, kodeTokenHangus(k), false);
   }
+}
+
+console.log("\nbacaBalikOtorisasi — akun toko vs akun utama (shop.auth_partner)");
+{
+  const q = (s) => bacaBalikOtorisasi(new URLSearchParams(s));
+  uji("akun toko", q("code=abc&shop_id=123"), { jenis: "toko", code: "abc", shopId: "123" });
+  uji("akun utama", q("code=abc&main_account_id=987"), { jenis: "akun_utama", code: "abc", mainAccountId: "987" });
+  uji("keduanya ada = shop_id didahulukan", q("code=abc&shop_id=1&main_account_id=2")?.jenis, "toko");
+  uji("shop_id rusak tapi main_account_id sah = akun utama", q("code=abc&shop_id=x1&main_account_id=2")?.jenis, "akun_utama");
+  uji("spasi di ujung dirapikan", q("code=%20abc%20&main_account_id=%20987%20"), { jenis: "akun_utama", code: "abc", mainAccountId: "987" });
+  uji("tanpa code = null", q("main_account_id=987"), null);
+  uji("code kosong = null", q("code=&shop_id=1"), null);
+  uji("tanpa id apa pun = null", q("code=abc"), null);
+  uji("main_account_id bukan angka = null", q("code=abc&main_account_id=12a"), null);
+  uji("main_account_id negatif = null", q("code=abc&main_account_id=-5"), null);
+}
+
+console.log("\ndaftarTokoAkunUtama — shop_id_list dari token/get");
+{
+  uji("angka biasa", daftarTokoAkunUtama([111, 222]), ["111", "222"]);
+  uji("kembar dibuang, urutan tetap", daftarTokoAkunUtama([222, 111, 222]), ["222", "111"]);
+  uji("string angka diterima", daftarTokoAkunUtama(["333", " 444 "]), ["333", "444"]);
+  uji("nilai rusak dibuang satuan", daftarTokoAkunUtama([0, -1, 1.5, "x", null, {}, 555]), ["555"]);
+  uji("string nol dibuang", daftarTokoAkunUtama(["000", "7"]), ["7"]);
+  uji("bukan array = kosong", daftarTokoAkunUtama(undefined), []);
+  uji("objek = kosong", daftarTokoAkunUtama({ 0: 1 }), []);
+  uji("dibatasi BATAS_TOKO_AKUN_UTAMA", daftarTokoAkunUtama(Array.from({ length: 80 }, (_, i) => i + 1)).length, BATAS_TOKO_AKUN_UTAMA);
 }
 
 console.log(`\n${"-".repeat(52)}`);
