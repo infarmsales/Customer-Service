@@ -53,6 +53,10 @@ export const WARNA_PLATFORM: Record<Platform, string> = {
   lazada: "#0f146d",
 };
 
+/* Sejak 12 Nov 2026 panel Chat TIDAK memakai daftar ini bila Supabase
+   aktif — tokonya dibaca dari marketplace_shops (lib/tokoChat.ts).
+   Daftar ini tinggal untuk mode demo tanpa database dan untuk pilihan
+   toko di halaman /simulasi. */
 export const DAFTAR_TOKO: Toko[] = [
   { nama: "infarmofficialshop", platform: "shopee", status: "online" },
   { nama: "infarm", platform: "shopee", status: "online" },
