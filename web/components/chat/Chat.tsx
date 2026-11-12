@@ -55,14 +55,25 @@ import { belumTerjawab } from "@/lib/tunggakan";
 import { bukaPapan, useCroscek } from "@/lib/croscek";
 import {
   cocokToko,
-  DAFTAR_TOKO,
   HURUF_LOGO,
   KELAS_LOGO,
+  LABEL_PLATFORM,
   namaTokoDari,
   SEMUA_TOKO,
   type Platform,
-  type Toko,
 } from "@/lib/toko";
+import {
+  cocokPilihan,
+  hitungPanel,
+  jenisPercakapan,
+  LABEL_JENIS,
+  PILIH_CONTOH,
+  PILIH_SIMULASI,
+  tokoTampil,
+  type TokoChat,
+} from "@/lib/tokoChat";
+import { useTokoChat, type SumberToko } from "@/lib/db/useTokoChat";
+import { useRouter } from "next/navigation";
 import { headerBerSesi } from "@/lib/supabase/header";
 import {
   buatPesananDummy,
@@ -89,19 +100,19 @@ const ACTION_META: Record<ActionCode, { tag: string; conf: string }> = {
   CHECK_ORDER_SYSTEM: { tag: "ORDER", conf: "Perlu cek data sistem pesanan" },
 };
 
-/* ---------------- Daftar toko ---------------- */
-
-/* Daftarnya pindah ke lib/toko.ts supaya halaman /simulasi memakai
-   toko yang SAMA. Sebelumnya /simulasi punya daftar karangan sendiri
-   berisi "Toko A / B / C", dan peragaan jadi menunjukkan toko yang
-   tidak ada di console ini. */
-type Shop = Toko;
-
-const STATUS_DOT: Record<Shop["status"], string> = {
-  online: "bg-green",
-  away: "bg-[#f59e0b]",
-  offline: "bg-[#cbd5e1]",
-};
+/** Lencana jenis percakapan non-asli (UJI / SIMULASI / CONTOH). */
+function LencanaJenis({ c }: { c: Conversation }) {
+  const jenis = jenisPercakapan(c);
+  if (jenis === "asli") return null;
+  return (
+    <span
+      title="Bukan pembeli asli"
+      className="shrink-0 rounded-md bg-[#fef3c7] px-1.5 py-px text-[0.58rem] font-extrabold tracking-wide text-[#92400e]"
+    >
+      {LABEL_JENIS[jenis]}
+    </span>
+  );
+}
 
 /* ---------------- Penyaringan daftar percakapan --------------- */
 
@@ -159,23 +170,125 @@ function snippet(c: Conversation) {
 
 /* ---------------- Panel: daftar toko ---------------- */
 
+/* Sejak 12 Nov 2026 daftarnya dari marketplace_shops (lib/tokoChat.ts),
+   dibagi tiga bagian:
+     1. "Semua toko" — HANYA percakapan dari toko asli.
+     2. Toko asli, dikelompokkan per marketplace.
+     3. "Uji" — toko sandbox, Simulasi, dan Data contoh. Bisa dilipat,
+        dan labelnya menegaskan isinya tidak sampai ke pembeli asli.
+   Di mode demo (tanpa Supabase) bagian 3 tidak ada dan daftarnya
+   tetap daftar contoh, seperti sebelumnya. */
+
+const URUTAN_PLATFORM: Platform[] = ["shopee", "tiktok", "lazada"];
+
+function BarisToko({
+  label,
+  logo,
+  kelasLogo,
+  n,
+  aktif,
+  dot,
+  onClick,
+  judul,
+}: {
+  label: string;
+  logo: string;
+  kelasLogo: string;
+  n: number;
+  aktif: boolean;
+  dot?: string;
+  onClick: () => void;
+  judul?: string;
+}) {
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onClick}
+        title={judul ?? label}
+        className={`flex w-full cursor-pointer items-center gap-2.5 border-none px-3.5 py-2.5 text-left transition ${
+          aktif ? "bg-green-mint" : "bg-transparent hover:bg-green-soft"
+        }`}
+      >
+        <span
+          className={`grid h-6 w-6 shrink-0 place-items-center rounded-md text-[0.7rem] font-extrabold text-white ${kelasLogo}`}
+          aria-hidden
+        >
+          {logo}
+        </span>
+        <span
+          className={`min-w-0 flex-1 truncate text-[0.86rem] ${n > 0 ? "font-semibold" : "font-normal text-muted"}`}
+        >
+          {label}
+        </span>
+        {/* Angka nol sengaja TIDAK ditampilkan sebagai "0": yang berguna
+            dilihat adalah toko mana yang ramai. */}
+        {n > 0 && (
+          <span className="shrink-0 rounded-lg bg-green-mint px-1.5 py-px text-[0.68rem] font-bold text-green-dark">
+            {n}
+          </span>
+        )}
+        {dot && <span className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />}
+      </button>
+    </li>
+  );
+}
+
 function ShopsPanel({
   shops,
+  sumber,
   active,
-  jumlah,
+  total,
+  perToko,
+  jumlahSimulasi,
+  jumlahContoh,
+  galatToko,
+  memuatToko,
+  onMuatUlang,
   onPick,
   onIntegrate,
   onClose,
 }: {
-  shops: Shop[];
+  shops: TokoChat[];
+  sumber: SumberToko;
   active: string;
+  /** Angka "Semua toko". */
+  total: number;
   /** Berapa percakapan per nama toko — kunci huruf kecil semua. */
-  jumlah: Map<string, number>;
+  perToko: Map<string, number>;
+  jumlahSimulasi: number;
+  jumlahContoh: number;
+  galatToko: string | null;
+  memuatToko: boolean;
+  onMuatUlang: () => void;
   onPick: (name: string) => void;
   onIntegrate: () => void;
   onClose?: () => void;
 }) {
-  const total = [...jumlah.values()].reduce((a, b) => a + b, 0);
+  const asli = shops.filter((s) => !s.uji);
+  const uji = shops.filter((s) => s.uji);
+  const adaBagianUji = sumber === "db" && (uji.length > 0 || jumlahSimulasi > 0 || jumlahContoh > 0);
+  const pilihanUji =
+    active === PILIH_SIMULASI || active === PILIH_CONTOH || uji.some((s) => s.nama === active);
+  const [bukaUji, setBukaUji] = useState(false);
+  const ujiTerbuka = bukaUji || pilihanUji;
+  const totalUji =
+    uji.reduce((a, s) => a + (perToko.get(s.nama.toLowerCase()) ?? 0), 0) + jumlahSimulasi + jumlahContoh;
+
+  const barisToko = (s: TokoChat) => (
+    <BarisToko
+      key={s.nama}
+      label={s.nama}
+      logo={HURUF_LOGO[s.platform]}
+      kelasLogo={KELAS_LOGO[s.platform]}
+      n={perToko.get(s.nama.toLowerCase()) ?? 0}
+      aktif={s.nama === active}
+      dot={s.aktif ? "bg-green" : "bg-[#cbd5e1]"}
+      judul={s.aktif ? s.nama : `${s.nama} — nonaktif`}
+      onClick={() => onPick(s.nama)}
+    />
+  );
+
   return (
     <div className="flex h-full flex-col bg-white">
       {onClose && (
@@ -190,74 +303,96 @@ function ShopsPanel({
       <div className="flex items-center justify-between border-b border-line px-3.5 py-3">
         <span className="text-[0.9rem] font-bold">Toko Terhubung</span>
       </div>
-      <div className="px-3.5 pt-3 pb-1.5 text-[0.72rem] font-bold tracking-wider text-muted uppercase">
-        Marketplace Terhubung
-      </div>
       <ul className="m-0 min-h-0 flex-1 list-none overflow-y-auto p-0">
         {/* "Semua toko" harus ada, dan harus jadi pilihan awal.
             Tanpanya, layar pertama yang dilihat CS adalah daftar
             toko teratas — yang kebetulan belum punya satu percakapan
             pun — dan console terlihat seperti kosong padahal penuh. */}
-        <li>
-          <button
-            type="button"
-            onClick={() => onPick(SEMUA_TOKO)}
-            className={`flex w-full cursor-pointer items-center gap-2.5 border-none border-b border-b-line-soft px-3.5 py-2.5 text-left transition ${
-              active === SEMUA_TOKO ? "bg-green-mint" : "bg-transparent hover:bg-green-soft"
-            }`}
-          >
-            <span
-              className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-green text-[0.7rem] font-extrabold text-white"
-              aria-hidden
-            >
-              ∀
-            </span>
-            <span className="min-w-0 flex-1 truncate text-[0.86rem] font-bold">Semua toko</span>
-            <span className="shrink-0 rounded-lg bg-green-mint px-1.5 py-px text-[0.68rem] font-bold text-green-dark">
-              {total}
-            </span>
-          </button>
-        </li>
+        <BarisToko
+          label="Semua toko"
+          logo="∀"
+          kelasLogo="bg-green"
+          n={total}
+          aktif={active === SEMUA_TOKO}
+          judul={sumber === "db" ? "Semua toko asli — tanpa data uji, simulasi, dan contoh" : "Semua toko"}
+          onClick={() => onPick(SEMUA_TOKO)}
+        />
 
-        {shops.map((s) => {
-          const n = jumlah.get(s.nama.toLowerCase()) ?? 0;
+        {galatToko && (
+          <li className="mx-3 my-2 rounded-xl border border-[#fecaca] bg-[#fef2f2] px-3 py-2 text-[0.74rem] text-[#b91c1c]">
+            Daftar toko gagal dimuat ({galatToko}).{" "}
+            <button
+              type="button"
+              onClick={onMuatUlang}
+              className="cursor-pointer border-none bg-transparent p-0 font-bold text-[#b91c1c] underline"
+            >
+              Coba lagi
+            </button>
+          </li>
+        )}
+        {memuatToko && (
+          <li className="px-3.5 py-2 text-[0.76rem] text-muted">Memuat daftar toko…</li>
+        )}
+        {sumber === "db" && !memuatToko && !galatToko && asli.length === 0 && (
+          <li className="px-3.5 py-2 text-[0.76rem] text-muted">Belum ada toko asli yang terhubung.</li>
+        )}
+
+        {URUTAN_PLATFORM.map((p) => {
+          const kelompok = asli.filter((s) => s.platform === p);
+          if (kelompok.length === 0) return null;
           return (
-            <li key={s.nama}>
-              <button
-                type="button"
-                onClick={() => onPick(s.nama)}
-                className={`flex w-full cursor-pointer items-center gap-2.5 border-none px-3.5 py-2.5 text-left transition ${
-                  s.nama === active ? "bg-green-mint" : "bg-transparent hover:bg-green-soft"
-                }`}
-              >
-                <span
-                  className={`grid h-6 w-6 shrink-0 place-items-center rounded-md text-[0.7rem] font-extrabold text-white ${KELAS_LOGO[s.platform]}`}
-                  aria-hidden
-                >
-                  {HURUF_LOGO[s.platform]}
-                </span>
-                <span
-                  className={`min-w-0 flex-1 truncate text-[0.86rem] ${n > 0 ? "font-semibold" : "font-normal text-muted"}`}
-                >
-                  {s.nama}
-                </span>
-                {/* Angka nol sengaja TIDAK ditampilkan sebagai "0".
-                    Yang berguna dilihat adalah toko mana yang ramai;
-                    deretan nol hanya membuat yang berisi jadi sulit
-                    ditemukan. Nama toko kosong dibuat pudar. */}
-                {n > 0 && (
-                  <span className="shrink-0 rounded-lg bg-green-mint px-1.5 py-px text-[0.68rem] font-bold text-green-dark">
-                    {n}
-                  </span>
-                )}
-                <span
-                  className={`h-2 w-2 shrink-0 rounded-full ${STATUS_DOT[s.status]}`}
-                  title={s.status}
-                />
-              </button>
+            <li key={p}>
+              <div className="px-3.5 pt-3 pb-1 text-[0.68rem] font-bold tracking-wider text-muted uppercase">
+                {LABEL_PLATFORM[p]}
+              </div>
+              <ul className="m-0 list-none p-0">{kelompok.map(barisToko)}</ul>
             </li>
           );
         })}
+
+        {adaBagianUji && (
+          <li className="mt-2 border-t border-line">
+            <button
+              type="button"
+              onClick={() => setBukaUji((b) => !b)}
+              aria-expanded={ujiTerbuka}
+              className="flex w-full cursor-pointer items-center gap-2 border-none bg-[#fffbeb] px-3.5 py-2.5 text-left"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block text-[0.72rem] font-bold tracking-wider text-[#92400e] uppercase">
+                  🧪 Uji {!ujiTerbuka && totalUji > 0 ? `(${totalUji})` : ""}
+                </span>
+                <span className="block text-[0.68rem] text-[#92400e]">Tidak sampai ke pembeli asli</span>
+              </span>
+              <span className="text-[0.8rem] text-[#92400e]" aria-hidden>
+                {ujiTerbuka ? "▾" : "▸"}
+              </span>
+            </button>
+            {ujiTerbuka && (
+              <ul className="m-0 list-none bg-[#fffdf5] p-0">
+                {uji.map(barisToko)}
+                <BarisToko
+                  label="Simulasi"
+                  logo="🛍"
+                  kelasLogo="bg-[#f59e0b]"
+                  n={jumlahSimulasi}
+                  aktif={active === PILIH_SIMULASI}
+                  judul="Percakapan buatan tombol Simulasi"
+                  onClick={() => onPick(PILIH_SIMULASI)}
+                />
+                <BarisToko
+                  label="Data contoh"
+                  logo="📄"
+                  kelasLogo="bg-[#94a3b8]"
+                  n={jumlahContoh}
+                  aktif={active === PILIH_CONTOH}
+                  judul="Percakapan contoh bawaan — bukan dari marketplace"
+                  onClick={() => onPick(PILIH_CONTOH)}
+                />
+              </ul>
+            )}
+          </li>
+        )}
       </ul>
       <button
         type="button"
@@ -320,6 +455,7 @@ function ConversationsPanel({
   tersembunyi,
   adaPenyaring,
   tokoDipilih,
+  pesanKosong,
   onPick,
   onClose,
 }: {
@@ -338,6 +474,8 @@ function ConversationsPanel({
   adaPenyaring: boolean;
   /** Satu toko tertentu sedang dipilih (bukan "Semua toko"). */
   tokoDipilih: boolean;
+  /** Kalimat khusus saat daftar kosong; menang atas kalimat bawaan. */
+  pesanKosong?: string | null;
   onPick: (id: string) => void;
   onClose?: () => void;
 }) {
@@ -467,7 +605,9 @@ function ConversationsPanel({
                 permintaan pemilik proyek. Pencarian tetap punya
                 kalimatnya sendiri: "untuk toko ini" salah kalau yang
                 menyembunyikan adalah kotak cari, bukan toko. */}
-            {tersembunyi > 0
+            {pesanKosong
+              ? pesanKosong
+              : tersembunyi > 0
               ? tokoDipilih
                 ? "Belum ada pesan masuk untuk toko ini."
                 : "Tidak ada percakapan yang cocok dengan pencarian ini."
@@ -498,10 +638,13 @@ function ConversationsPanel({
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-baseline justify-between gap-2">
-                  <span
-                    className={`truncate text-[0.88rem] ${c.unread ? "font-extrabold" : "font-semibold"}`}
-                  >
-                    {c.customer_name}
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span
+                      className={`truncate text-[0.88rem] ${c.unread ? "font-extrabold" : "font-semibold"}`}
+                    >
+                      {c.customer_name}
+                    </span>
+                    <LencanaJenis c={c} />
                   </span>
                   <span className="shrink-0 text-[0.72rem] text-muted">
                     {jam(c.last_message_at)}
@@ -852,26 +995,24 @@ export default function Chat() {
   const [activeId, setActiveId] = useState<string>(conversations[0]?.id ?? "");
   const [filter, setFilter] = useState<FilterKey>("all");
   const [draft, setDraft] = useState("");
-  const [shops, setShops] = useState<Shop[]>(DAFTAR_TOKO);
+  const router = useRouter();
+  const tokoChat = useTokoChat();
+  /* Toko yang ditambahkan lewat modal — HANYA di mode demo (tanpa
+     Supabase). Di mode database, menambah toko berarti otorisasi
+     sungguhan di Pengaturan; baris karangan di sini akan berbohong. */
+  const [tokoDemo, setTokoDemo] = useState<TokoChat[]>([]);
   const [activeShop, setActiveShop] = useState<string>(SEMUA_TOKO);
+  const modeDb = tokoChat.sumber === "db";
   const [modal, setModal] = useState(false);
   const [overlay, setOverlay] = useState<null | "shops" | "conv" | "info">(null);
   const [meminta, setMeminta] = useState(false);
   const streamRef = useRef<HTMLDivElement>(null);
 
-  const active =
-    conversations.find((c) => c.id === activeId) ?? conversations[0] ?? null;
-
-  // Membuka percakapan = menandainya sudah dibaca (dashboard.js).
-  useEffect(() => {
-    if (active) markRead(active.id);
-  }, [active]);
-
-  useEffect(() => {
-    if (streamRef.current) {
-      streamRef.current.scrollTop = streamRef.current.scrollHeight;
-    }
-  }, [active?.id, active?.messages.length]);
+  /* `active` dihitung di bawah, setelah `rows`: percakapan yang dibuka
+     bawaan harus diambil dari daftar yang TERLIHAT. Sebelumnya ia
+     selalu conversations[0] — di mode database itu bisa percakapan
+     contoh, yang tampil di jendela chat sementara daftar "Semua toko"
+     (yang kini hanya toko asli) tidak memuatnya. */
 
   /* --- Antrean "Perlu CS" bersandar pada eskalasi TERBUKA --------
 
@@ -916,7 +1057,10 @@ export default function Chat() {
          daftar percakapannya tidak pernah ikut berubah. Toko yang
          berbeda menampilkan pelanggan yang persis sama, dan tidak
          ada galat apa pun yang menunjukkan bahwa itu keliru. */
-      if (!cocokToko(c.shop_name, activeShop)) return false;
+      /* Mode database (12 Nov 2026): "Semua toko" hanya toko asli;
+         uji/simulasi/contoh punya pilihan sendiri. Mode demo tetap
+         perilaku lama — semua percakapan dicocokkan lewat nama toko. */
+      if (modeDb ? !cocokPilihan(c, activeShop) : !cocokToko(c.shop_name, activeShop)) return false;
 
       /* Pencarian topbar (lingkup + massal), sama seperti dashboard.js
          — dan sejak 11 Sep 2026 inilah SATU-SATUNYA pencarian yang
@@ -931,7 +1075,7 @@ export default function Chat() {
       }
       return true;
     });
-  }, [conversations, search, activeShop]);
+  }, [conversations, search, activeShop, modeDb]);
 
   /** Apakah sebuah percakapan masuk tab yang sedang dibuka. */
   const cocokTab = useCallback(
@@ -970,20 +1114,53 @@ export default function Chat() {
     );
   }, [dasar, cocokTab, filter, menungguSejak]);
 
+  /* Percakapan yang dibuka: pilihan CS bila masih ada, kalau tidak
+     baris teratas dari daftar yang TERLIHAT. Di mode demo tetap jatuh
+     ke percakapan pertama seperti dulu. */
+  const active =
+    conversations.find((c) => c.id === activeId) ??
+    rows[0] ??
+    (modeDb ? null : conversations[0]) ??
+    null;
+
+  // Membuka percakapan = menandainya sudah dibaca (dashboard.js).
+  useEffect(() => {
+    if (active) markRead(active.id);
+  }, [active]);
+
+  useEffect(() => {
+    if (streamRef.current) {
+      streamRef.current.scrollTop = streamRef.current.scrollHeight;
+    }
+  }, [active?.id, active?.messages.length]);
+
   /* Hitungan per toko — dipakai lencana di panel kiri.
      Sengaja dihitung atas SELURUH percakapan, bukan atas `rows`:
      gunanya justru memberi tahu ada apa di toko yang sedang TIDAK
      dipilih. Kalau ikut tersaring, semuanya akan selalu nol kecuali
-     satu, dan lencananya tidak memberi informasi apa pun. */
-  const jumlahPerToko = useMemo(() => {
-    const peta = new Map<string, number>();
+     satu, dan lencananya tidak memberi informasi apa pun.
+
+     Mode database memakai hitungPanel(): percakapan simulasi yang
+     kebetulan memakai nama toko asli (mis. "infarm") TIDAK ikut
+     angka toko itu. */
+  const panel = useMemo(() => {
+    if (modeDb) return hitungPanel(conversations);
+    const perToko = new Map<string, number>();
     for (const c of conversations) {
       const kunci = namaTokoDari(c.shop_name).toLowerCase();
       if (!kunci) continue;
-      peta.set(kunci, (peta.get(kunci) ?? 0) + 1);
+      perToko.set(kunci, (perToko.get(kunci) ?? 0) + 1);
     }
-    return peta;
-  }, [conversations]);
+    return { asli: conversations.length, simulasi: 0, contoh: 0, perToko };
+  }, [conversations, modeDb]);
+
+  const shops = useMemo(
+    () =>
+      modeDb
+        ? tokoTampil(tokoChat.toko, conversations, panel.perToko)
+        : [...tokoChat.toko, ...tokoDemo],
+    [modeDb, tokoChat.toko, conversations, panel.perToko, tokoDemo],
+  );
 
   /* Angka tab dihitung atas `dasar` — persis himpunan yang dipakai
      daftar. Lencana yang berbunyi 3 karena itu selalu berarti tiga
@@ -1007,10 +1184,25 @@ export default function Chat() {
      hanya dipakai saat daftar KOSONG — spanduk yang muncul setiap kali
      satu toko dipilih dihapus karena mengganggu, sedangkan daftar
      kosong yang diam-diam menyembunyikan antrean tetap dikatakan. */
+  /* Di mode database, "Semua toko" memang tidak memuat data uji —
+     itu bukan "tersembunyi penyaring", jadi tidak dihitung di sini.
+     Kalimat kosongnya sendiri diatur lewat `pesanKosong`. */
   const tersembunyi = useMemo(
-    () => conversations.filter(cocokTab).length - rows.length,
-    [conversations, cocokTab, rows.length],
+    () =>
+      conversations.filter(
+        (c) => cocokTab(c) && (!modeDb || activeShop !== SEMUA_TOKO || jenisPercakapan(c) === "asli"),
+      ).length - rows.length,
+    [conversations, cocokTab, rows.length, modeDb, activeShop],
   );
+
+  /* "Semua toko" kosong karena chat toko asli memang belum ada —
+     harus dikatakan, dan harus menunjuk ke tempat data ujinya. */
+  const pesanKosong =
+    modeDb && activeShop === SEMUA_TOKO && panel.asli === 0
+      ? conversations.length > 0
+        ? "Belum ada chat dari toko asli. Chat uji, simulasi, dan contoh ada di bagian 🧪 Uji di panel toko."
+        : "Belum ada chat dari toko asli."
+      : null;
 
   const adaPenyaring =
     activeShop !== SEMUA_TOKO ||
@@ -1181,10 +1373,97 @@ export default function Chat() {
     }
   };
 
+  /* Di mode database tombol "Integrasikan Toko Baru" membuka bagian
+     Integrasi di Pengaturan — tempat otorisasi yang sungguhan. Modal
+     lama hanya menambah baris karangan di layar, dan itu hanya pantas
+     di mode demo. */
+  const integrasikan = () => {
+    setOverlay(null);
+    if (modeDb) router.push("/settings?bagian=integrasi");
+    else setModal(true);
+  };
+
+  const panelToko = (onClose?: () => void) => (
+    <ShopsPanel
+      shops={shops}
+      sumber={tokoChat.sumber}
+      active={activeShop}
+      total={panel.asli}
+      perToko={panel.perToko}
+      jumlahSimulasi={panel.simulasi}
+      jumlahContoh={panel.contoh}
+      galatToko={tokoChat.galat}
+      memuatToko={tokoChat.memuat}
+      onMuatUlang={tokoChat.muatUlang}
+      onPick={(n) => {
+        setActiveShop(n);
+        /* Pilihan percakapan lama dilepas: kalau tidak, jendela chat
+           tetap menampilkan percakapan dari toko sebelumnya. */
+        setActiveId("");
+        setOverlay(null);
+      }}
+      onIntegrate={integrasikan}
+      onClose={onClose}
+    />
+  );
+
+  const panelPercakapan = (onClose?: () => void) => (
+    <ConversationsPanel
+      rows={rows}
+      activeId={active?.id ?? ""}
+      filter={filter}
+      setFilter={setFilter}
+      counts={counts}
+      menungguSejak={menungguSejak}
+      jumlahSimulasi={jumlahSimulasi}
+      tersembunyi={tersembunyi}
+      adaPenyaring={adaPenyaring}
+      tokoDipilih={activeShop !== SEMUA_TOKO}
+      pesanKosong={pesanKosong}
+      onPick={pick}
+      onClose={onClose}
+    />
+  );
+
+  /* Tanpa percakapan terpilih, panel toko dan daftar tetap tampil.
+     Dulu seluruh halaman diganti satu kalimat "Belum ada
+     percakapan." — di mode database itu berarti, selama toko asli
+     belum punya chat, bagian 🧪 Uji tidak bisa dibuka sama sekali. */
   if (!active) {
     return (
-      <div className="grid h-full place-items-center p-6 text-muted">
-        Belum ada percakapan.
+      <div className="relative flex h-full min-h-0">
+        <aside className="w-56 shrink-0 max-tablet:hidden">{panelToko()}</aside>
+        <section className="w-72 shrink-0 max-mobile:hidden">{panelPercakapan()}</section>
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-page">
+          {/* Tombol pembuka panel hanya perlu di layar sempit. */}
+          <div className="hidden gap-2 border-b border-line bg-white px-3.5 py-2.5 max-tablet:flex">
+            <button
+              type="button"
+              onClick={() => setOverlay("shops")}
+              title="Toko terhubung"
+              className="hidden h-10 w-10 cursor-pointer rounded-xl border border-line bg-white max-tablet:block"
+            >
+              🏪
+            </button>
+            <button
+              type="button"
+              onClick={() => setOverlay("conv")}
+              title="Daftar percakapan"
+              className="hidden h-10 w-10 cursor-pointer rounded-xl border border-line bg-white max-mobile:block"
+            >
+              ☰
+            </button>
+          </div>
+          <div className="grid flex-1 place-items-center p-6 text-center text-muted">
+            {conversations.length === 0 ? "Belum ada percakapan." : "Pilih percakapan di daftar."}
+          </div>
+        </main>
+        {overlay && overlay !== "info" && (
+          <div className="absolute inset-0 z-40 bg-white">
+            {overlay === "shops" ? panelToko(() => setOverlay(null)) : panelPercakapan(() => setOverlay(null))}
+          </div>
+        )}
+        <PapanCroscek calon={calonCroscek} onPilih={(id) => pick(id)} />
       </div>
     );
   }
@@ -1199,32 +1478,10 @@ export default function Chat() {
   return (
     <div className="relative flex h-full min-h-0">
       {/* Panel 1 — toko (disembunyikan ≤980px) */}
-      <aside className="w-56 shrink-0 max-tablet:hidden">
-        <ShopsPanel
-          shops={shops}
-          active={activeShop}
-          jumlah={jumlahPerToko}
-          onPick={setActiveShop}
-          onIntegrate={() => setModal(true)}
-        />
-      </aside>
+      <aside className="w-56 shrink-0 max-tablet:hidden">{panelToko()}</aside>
 
       {/* Panel 2 — daftar percakapan (disembunyikan ≤760px) */}
-      <section className="w-72 shrink-0 max-mobile:hidden">
-        <ConversationsPanel
-          rows={rows}
-          activeId={active.id}
-          filter={filter}
-          setFilter={setFilter}
-          counts={counts}
-          menungguSejak={menungguSejak}
-          jumlahSimulasi={jumlahSimulasi}
-          tersembunyi={tersembunyi}
-          adaPenyaring={adaPenyaring}
-          tokoDipilih={activeShop !== SEMUA_TOKO}
-          onPick={pick}
-        />
-      </section>
+      <section className="w-72 shrink-0 max-mobile:hidden">{panelPercakapan()}</section>
 
       {/* Panel 3 — jendela chat */}
       <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-page">
@@ -1250,7 +1507,10 @@ export default function Chat() {
               {inisial(active.customer_name)}
             </span>
             <div className="min-w-0">
-              <div className="truncate font-bold">{active.customer_name}</div>
+              <div className="flex min-w-0 items-center gap-1.5">
+                <span className="truncate font-bold">{active.customer_name}</span>
+                <LencanaJenis c={active} />
+              </div>
               <div className="truncate text-[0.78rem] text-muted">{active.shop_name}</div>
             </div>
           </div>
@@ -1488,38 +1748,8 @@ export default function Chat() {
       {/* Overlay panel untuk layar sempit */}
       {overlay && (
         <div className="absolute inset-0 z-40 bg-white">
-          {overlay === "shops" && (
-            <ShopsPanel
-              shops={shops}
-              active={activeShop}
-              jumlah={jumlahPerToko}
-              onPick={(n) => {
-                setActiveShop(n);
-                setOverlay(null);
-              }}
-              onIntegrate={() => {
-                setOverlay(null);
-                setModal(true);
-              }}
-              onClose={() => setOverlay(null)}
-            />
-          )}
-          {overlay === "conv" && (
-            <ConversationsPanel
-              rows={rows}
-              activeId={active.id}
-              filter={filter}
-              setFilter={setFilter}
-              counts={counts}
-              menungguSejak={menungguSejak}
-              jumlahSimulasi={jumlahSimulasi}
-              tersembunyi={tersembunyi}
-              adaPenyaring={adaPenyaring}
-              tokoDipilih={activeShop !== SEMUA_TOKO}
-              onPick={pick}
-              onClose={() => setOverlay(null)}
-            />
-          )}
+          {overlay === "shops" && panelToko(() => setOverlay(null))}
+          {overlay === "conv" && panelPercakapan(() => setOverlay(null))}
           {overlay === "info" && (
             <InfoPanel key={active.id} c={active} onClose={() => setOverlay(null)} />
           )}
@@ -1545,7 +1775,7 @@ export default function Chat() {
           onAdd={({ name, platform }: { name: string; platform: PlatformName }) => {
             const p: Platform =
               platform === "Shopee" ? "shopee" : platform === "TikTok Shop" ? "tiktok" : "lazada";
-            setShops((prev) => [...prev, { nama: name, platform: p, status: "online" }]);
+            setTokoDemo((prev) => [...prev, { nama: name, platform: p, aktif: true, uji: false }]);
           }}
         />
       )}

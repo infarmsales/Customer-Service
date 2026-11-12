@@ -783,7 +783,9 @@ export default function Settings() {
        diterima eslint react-hooks/set-state-in-effect. */
     void (async () => {
       try {
-        if (new URLSearchParams(window.location.search).has("shopee")) setSection("integrasi");
+        /* ?bagian=integrasi — dari tombol "Integrasikan Toko Baru" di Chat. */
+        const q = new URLSearchParams(window.location.search);
+        if (q.has("shopee") || q.get("bagian") === "integrasi") setSection("integrasi");
       } catch {
         /* tanpa window — biarkan */
       }
