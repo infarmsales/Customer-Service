@@ -217,3 +217,34 @@ export function daftarTokoAkunUtama(list: unknown): string[] {
   }
   return hasil;
 }
+
+/* -----------------------------------------------------------
+   Baris yang ditulis saat toko diotorisasi
+   ----------------------------------------------------------- */
+
+/**
+ * Isi upsert marketplace_shops untuk toko yang baru diotorisasi
+ * (akun toko maupun setiap shop_id dari otorisasi akun utama).
+ *
+ * SENGAJA TIDAK memuat ikut_sinkron_otomatis: toko BARU mendapat bawaan kolom
+ * (false), dan toko LAMA yang diotorisasi ulang mempertahankan nilainya.
+ * Toko besar tidak boleh ikut ditarik JADWAL otomatis hanya karena baru
+ * diotorisasi lewat akun utama — sinkron toko itu hanya lewat tombol,
+ * kapan admin mau. Diuji di uji-shopee-sinkron.mjs.
+ */
+export function barisSimpanToko(
+  platform: string,
+  shopId: string,
+  token: { accessToken: string; refreshToken: string; accessExpiresAt: Date; refreshExpiresAt: Date },
+): Record<string, string | boolean | null> {
+  return {
+    platform,
+    external_shop_id: shopId,
+    access_token: token.accessToken,
+    refresh_token: token.refreshToken,
+    access_token_expires_at: token.accessExpiresAt.toISOString(),
+    refresh_token_expires_at: token.refreshExpiresAt.toISOString(),
+    refreshing_until: null,
+    is_active: true,
+  };
+}

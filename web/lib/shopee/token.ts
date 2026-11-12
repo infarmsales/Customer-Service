@@ -43,6 +43,7 @@ import { GalatShopee, kredensialDariEnv, permintaanMentah } from "./klien.ts";
 import {
   LAMA_KUNCI_DETIK,
   UMUR_REFRESH_TOKEN_HARI,
+  barisSimpanToko,
   daftarTokoAkunUtama,
   hitungKedaluwarsaToken,
   kodeTokenHangus,
@@ -60,10 +61,19 @@ const KOLOM_TOKEN =
   "access_token_expires_at, refresh_token_expires_at, refreshing_until, is_active";
 
 /** Kolom yang BOLEH dilihat peramban — tanpa token. */
-const KOLOM_LAYAR =
+const KOLOM_LAYAR_DASAR =
   "id, platform, external_shop_id, shop_name, region, is_active, " +
   "access_token_expires_at, refresh_token_expires_at, authorization_expires_at, " +
   "orders_synced_until, updated_at";
+
+/** Kolom dari migrasi 20261112120000_sinkron_skala_besar.sql. */
+const KOLOM_LAYAR =
+  KOLOM_LAYAR_DASAR +
+  ", ikut_sinkron_otomatis, sinkron_kunci_sampai, sinkron_terakhir_pada, sinkron_terakhir_status, " +
+  "cek_token_pada, cek_token_ok, cek_token_galat";
+
+/** Kode Postgres "undefined_column". */
+const KOLOM_TIDAK_ADA = "42703";
 
 type BarisToken = {
   id: string;
@@ -91,7 +101,27 @@ export type TokoUntukLayar = {
   /** Sampai kapan pesanan toko ini sudah ditarik; null = belum pernah. */
   orders_synced_until: string | null;
   updated_at: string;
+  /** Toko ini ikut ditarik job otomatis (bila mode otomatis nyala). Tombol admin tidak terpengaruh. false bila migrasi belum dijalankan. */
+  ikut_sinkron_otomatis: boolean;
+  sinkron_kunci_sampai: string | null;
+  sinkron_terakhir_pada: string | null;
+  sinkron_terakhir_status: string | null;
+  /** Cek kesehatan token harian (get_shop_info). */
+  cek_token_pada: string | null;
+  cek_token_ok: boolean | null;
+  cek_token_galat: string | null;
 };
+
+/** Nilai kolom baru saat migrasi skala besar belum dijalankan — semua ke arah aman. */
+const KOLOM_BARU_KOSONG = {
+  ikut_sinkron_otomatis: false,
+  sinkron_kunci_sampai: null,
+  sinkron_terakhir_pada: null,
+  sinkron_terakhir_status: null,
+  cek_token_pada: null,
+  cek_token_ok: null,
+  cek_token_galat: null,
+} as const;
 
 export type TokenToko = {
   accessToken: string;
@@ -184,19 +214,9 @@ export async function simpanTokoBaru(shopId: string, token: TokenToko): Promise<
   const sb = getSupabaseAdmin();
   const { data, error } = await sb
     .from(TABEL)
-    .upsert(
-      {
-        platform: PLATFORM,
-        external_shop_id: shopId,
-        access_token: token.accessToken,
-        refresh_token: token.refreshToken,
-        access_token_expires_at: token.accessExpiresAt.toISOString(),
-        refresh_token_expires_at: token.refreshExpiresAt.toISOString(),
-        refreshing_until: null,
-        is_active: true,
-      },
-      { onConflict: "platform,external_shop_id" },
-    )
+    /* barisSimpanToko() sengaja tanpa ikut_sinkron_otomatis: toko baru = false
+       (bawaan kolom), toko lama yang diotorisasi ulang tidak berubah. */
+    .upsert(barisSimpanToko(PLATFORM, shopId, token), { onConflict: "platform,external_shop_id" })
     .select("id")
     .single();
   if (error || !data) throw new GalatToko("database", error?.message ?? "upsert tanpa baris");
@@ -239,8 +259,39 @@ export async function daftarToko(): Promise<TokoUntukLayar[]> {
     .from(TABEL)
     .select(KOLOM_LAYAR)
     .order("created_at", { ascending: true });
+  if (error?.code === KOLOM_TIDAK_ADA) {
+    /* Kode sudah terpasang, migrasi skala besar belum dijalankan. Jangan
+       sampai halaman Pengaturan — dan terutama job perpanjangan token —
+       ikut mati karenanya. Kolom baru diisi ke arah aman: tidak ada toko
+       yang disinkronkan pesanannya. */
+    const lama = await sb.from(TABEL).select(KOLOM_LAYAR_DASAR).order("created_at", { ascending: true });
+    if (lama.error) throw new GalatToko("database", lama.error.message);
+    return ((lama.data ?? []) as unknown as Omit<TokoUntukLayar, keyof typeof KOLOM_BARU_KOSONG>[]).map((t) => ({
+      ...t,
+      ...KOLOM_BARU_KOSONG,
+    }));
+  }
   if (error) throw new GalatToko("database", error.message);
   return (data ?? []) as unknown as TokoUntukLayar[];
+}
+
+/**
+ * Catat hasil cek kesehatan token harian: KAPAN, ok atau tidak, dan
+ * KODE galat. Isi jawaban get_shop_info sengaja tidak disimpan. Gagal
+ * mencatat (mis. migrasi belum dijalankan) tidak menggagalkan job token.
+ */
+export async function catatCekToken(id: string, ok: boolean, kode: string | null): Promise<void> {
+  const sb = getSupabaseAdmin();
+  const { error } = await sb
+    .from(TABEL)
+    .update({ cek_token_pada: new Date().toISOString(), cek_token_ok: ok, cek_token_galat: ok ? null : kode })
+    .eq("id", id);
+  if (error) console.warn("[shopee/token] cek token tidak tercatat:", error.code ?? "?");
+}
+
+/** Satu toko Shopee, kolom aman. null bila tidak ada. */
+export async function bacaToko(id: string): Promise<TokoUntukLayar | null> {
+  return (await daftarToko()).find((t) => t.id === id && t.platform === PLATFORM) ?? null;
 }
 
 /**

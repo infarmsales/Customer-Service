@@ -17,6 +17,7 @@ const {
   jenisPill,
   ringkasBarang,
   namaToko,
+  tokoBelumDisinkron,
   pilihanToko,
   SARINGAN_AWAL,
 } = await import("../lib/daftarPesanan.ts");
@@ -119,9 +120,9 @@ uji("nama kosong dilewati", ringkasBarang([{ nama: "  ", qty: 1 }, { nama: "B", 
 
 console.log("\nToko");
 const toko = [
-  { id: "A", nama: "Infarm Kecil", platform: "shopee", aktif: true },
-  { id: "B", nama: "OpenSANDBOX", platform: "shopee", aktif: false },
-  { id: "D", nama: "Toko Baru", platform: "shopee", aktif: true },
+  { id: "A", nama: "Infarm Kecil", platform: "shopee", aktif: true, sinkron: true },
+  { id: "B", nama: "OpenSANDBOX", platform: "shopee", aktif: false, sinkron: true },
+  { id: "D", nama: "Toko Besar", platform: "shopee", aktif: true, sinkron: false },
 ];
 uji("nama toko dikenal", namaToko("A", toko), "Infarm Kecil");
 uji("toko tak dikenal tidak dikosongkan", namaToko("C", toko), "Toko tidak dikenal");
@@ -133,9 +134,21 @@ uji(
 uji("toko nonaktif ditandai", pilihanToko(daftar, toko).find((o) => o.value === "B")?.label, "OpenSANDBOX · shopee (nonaktif)");
 uji(
   "toko nonaktif tanpa pesanan tidak muncul",
-  pilihanToko([], [{ id: "X", nama: "Lama", platform: "shopee", aktif: false }]).map((o) => o.value),
+  pilihanToko([], [{ id: "X", nama: "Lama", platform: "shopee", aktif: false, sinkron: false }]).map((o) => o.value),
   ["semua"],
 );
+
+console.log("\nToko yang belum disinkronkan (toko besar yang baru diotorisasi)");
+uji(
+  "toko yang belum pernah disinkron diberi keterangan",
+  pilihanToko(daftar, toko).find((o) => o.value === "D")?.label,
+  "Toko Besar · shopee — belum pernah disinkronkan",
+);
+uji("toko tersinkron tanpa keterangan", pilihanToko(daftar, toko).find((o) => o.value === "A")?.label, "Infarm Kecil · shopee");
+uji("pilih toko belum disinkron -> peringatan", tokoBelumDisinkron("D", toko)?.nama, "Toko Besar");
+uji("pilih toko tersinkron -> tanpa peringatan", tokoBelumDisinkron("A", toko), null);
+uji("pilih semua -> tanpa peringatan", tokoBelumDisinkron("semua", toko), null);
+uji("toko tak dikenal -> tanpa peringatan palsu", tokoBelumDisinkron("C", toko), null);
 
 console.log(`\nDaftar Pesanan : ${gagal === 0 ? "LULUS" : "GAGAL"} ${lulus}/${lulus + gagal}`);
 process.exit(gagal === 0 ? 0 : 1);

@@ -5,7 +5,7 @@
 
    Berbeda dengan tiga tab lain di halaman Pesanan (data contoh),
    isi tab ini ditulis sinkronisasi marketplace (cron 15 menit atau
-   tombol "Sinkronkan sekarang" di Pengaturan). Hanya membaca: tidak
+   tombol "Sinkronkan" di Pengaturan). Hanya membaca: tidak
    ada tombol yang mengubah pesanan, karena sumber kebenarannya
    adalah marketplace.
 
@@ -27,6 +27,7 @@ import {
   ringkasBarang,
   saringPesanan,
   saringTanpaStatus,
+  tokoBelumDisinkron,
   type Saringan,
 } from "@/lib/daftarPesanan";
 import { useDaftarPesanan } from "@/lib/db/useDaftarPesanan";
@@ -54,6 +55,7 @@ export default function DaftarPesanan() {
   const chip = useMemo(() => chipStatus(dasar), [dasar]);
   const baris = useMemo(() => saringPesanan(daftar, s), [daftar, s]);
   const opsiToko = useMemo(() => pilihanToko(daftar, toko), [daftar, toko]);
+  const belumSinkron = tokoBelumDisinkron(s.toko, toko);
   /* Dihitung sekali per muat, bukan per render — cukup untuk penanda "terlambat". */
   const sekarang = useMemo(() => (dimuatPada ? Date.parse(dimuatPada) : 0), [dimuatPada]);
 
@@ -72,8 +74,8 @@ export default function DaftarPesanan() {
         <div className="min-w-0">
           <h2 className="m-0 text-[1rem] font-extrabold text-text">Pesanan dari marketplace</h2>
           <p className="m-0 mt-0.5 text-[0.8rem] text-muted">
-            Data asli hasil sinkronisasi (otomatis tiap 15 menit, atau tombol &quot;Sinkronkan sekarang&quot; di
-            Pengaturan). Hanya dibaca — perubahan pesanan tetap dilakukan di Seller Center.
+            Data asli hasil sinkronisasi (tombol &quot;Sinkronkan&quot; per toko di Pengaturan, atau otomatis bila
+            dinyalakan). Hanya dibaca — perubahan pesanan tetap dilakukan di Seller Center.
           </p>
         </div>
         <button
@@ -138,11 +140,19 @@ export default function DaftarPesanan() {
       {keadaan === "siap" && daftar.length === 0 && (
         <Kotak>
           Belum ada pesanan tersimpan. Hubungkan toko di <b>Pengaturan → Toko Terhubung</b>, lalu tekan
-          &quot;Sinkronkan sekarang&quot;. Sinkronisasi pertama menarik pesanan 1 hari terakhir.
+          &quot;Sinkronkan&quot;. Sinkronisasi pertama menarik pesanan 1 hari terakhir.
         </Kotak>
       )}
 
-      {keadaan === "siap" && daftar.length > 0 && baris.length === 0 && (
+      {keadaan === "siap" && belumSinkron && (
+        <Kotak>
+          <b>{belumSinkron.nama}</b> terhubung, tetapi pesanannya <b>belum pernah disinkronkan</b> ke console. Daftar
+          yang kosong di sini BUKAN berarti toko ini tidak punya pesanan — cek di Seller Center. Untuk menariknya,
+          tekan tombol <b>Sinkronkan</b> di kartu toko ini (Pengaturan → Integrasi Marketplace).
+        </Kotak>
+      )}
+
+      {keadaan === "siap" && daftar.length > 0 && baris.length === 0 && !belumSinkron && (
         <Kotak>
           Tidak ada pesanan yang cocok dengan saringan ini di {daftar.length} pesanan terbaru yang dimuat.
           {terpotong ? " Pesanan yang lebih lama tidak ikut dimuat." : ""}

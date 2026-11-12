@@ -29,16 +29,23 @@ import type { DaftarDetailPesanan, DaftarPesanan, DetailPesananShopee } from "./
 /**
  * Semua order_sn yang berubah di [dari, sampai] (epoch detik).
  * Memecah rentang dan mengikuti cursor sendiri. Hasilnya unik.
+ *
+ * @param batas bila diisi, berhenti begitu jumlahnya MELEBIHI batas —
+ *   pemanggil cukup tahu "terlalu banyak, belah potongannya", tidak
+ *   perlu menunggu seluruh halaman ditarik. Hasilnya lalu tidak lengkap
+ *   dan tidak boleh dipakai untuk menarik detail.
  */
 export async function daftarSnBerubah(
   accessToken: string,
   shopId: string,
   dari: number,
   sampai: number,
+  batas: number = Number.POSITIVE_INFINITY,
 ): Promise<string[]> {
   const kumpulan = new Set<string>();
 
   for (const r of pecahRentang(dari, sampai)) {
+    if (kumpulan.size > batas) break;
     let cursor = "";
     /* Pagar terhadap cursor yang berputar: Shopee tidak pernah
        mengembalikan lebih dari ini untuk 14 hari satu toko, dan kalau
@@ -58,6 +65,7 @@ export async function daftarSnBerubah(
         },
       });
       for (const o of data.order_list ?? []) if (o.order_sn) kumpulan.add(o.order_sn);
+      if (kumpulan.size > batas) break;
       if (!data.more || !data.next_cursor) break;
       cursor = data.next_cursor;
     }

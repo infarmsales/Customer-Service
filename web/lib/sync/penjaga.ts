@@ -9,7 +9,7 @@ import "server-only";
              dengan timingSafeEqual supaya panjang dan isi rahasianya
              tidak bisa ditebak dari perbedaan waktu jawaban.
      admin   sesi login yang profilnya berperan admin — untuk tombol
-             "Sinkronkan sekarang" di Pengaturan. Diperiksa lewat
+             "Sinkronkan" di Pengaturan. Diperiksa lewat
              tabel profiles, bukan dari klaim di JWT.
 
    CRON_SECRET yang kosong TIDAK membuat pintu cron terbuka; ia
