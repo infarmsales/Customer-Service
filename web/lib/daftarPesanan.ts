@@ -39,13 +39,13 @@ export type TokoRingkas = {
   nama: string;
   platform: string;
   aktif: boolean;
-  /** marketplace_shops.sinkron_pesanan. false = toko terhubung tapi pesanannya tidak ditarik. */
+  /** Pernah disinkronkan (orders_synced_until terisi). false = toko terhubung tapi pesanannya belum pernah ditarik. */
   sinkron: boolean;
 };
 
 /**
- * Toko yang dipilih di saringan tapi pesanannya TIDAK disinkronkan
- * (mis. toko besar yang baru diotorisasi). Daftar kosong untuk toko
+ * Toko yang dipilih di saringan tapi pesanannya BELUM PERNAH disinkronkan
+ * (mis. toko besar yang baru diotorisasi dan belum ditekan tombolnya). Daftar kosong untuk toko
  * ini tidak boleh terbaca sebagai "tidak ada pesanan".
  */
 export function tokoBelumDisinkron(pilihan: string, toko: readonly TokoRingkas[]): TokoRingkas | null {
@@ -162,7 +162,7 @@ export function pilihanToko(
       label:
         `${t.nama} · ${t.platform}` +
         (t.aktif ? "" : " (nonaktif)") +
-        (t.sinkron ? "" : " — pesanan belum disinkronkan"),
+        (t.sinkron ? "" : " — belum pernah disinkronkan"),
     })),
     ...tanpaNama.map((id) => ({ value: id, label: "Toko tidak dikenal" })),
   ];

@@ -279,26 +279,32 @@ export function perluSimpanRaw(
 
 /* ---------------- Dua sakelar: siapa disinkronkan, kapan ---------------- */
 
-export type KeputusanSinkron = "jalan" | "dilewati_toko_nonaktif" | "dilewati_mode_manual";
+export type KeputusanSinkron = "jalan" | "dilewati_tidak_ikut_otomatis" | "dilewati_mode_manual";
 
 /**
- * Sakelar 1 (per toko, marketplace_shops.sinkron_pesanan) dan sakelar 2
- * (settings.sinkron_pesanan_otomatis). HANYA `true` yang berarti nyala;
- * null, string, angka, atau nilai rusak apa pun = mati. Tombol admin
- * tidak melihat mode jadwal, tetapi tetap tunduk pada sakelar toko.
+ * Siapa boleh menarik pesanan toko ini, sekarang.
+ *
+ *   tombol admin  SELALU boleh, untuk toko mana pun — kapan menyinkronkan
+ *                 adalah keputusan admin (diminta pemilik proyek, 12 Nov 2026).
+ *   cron          hanya bila KEDUA sakelar nyala:
+ *                   1. marketplace_shops.ikut_sinkron_otomatis (per toko)
+ *                   2. settings.sinkron_pesanan_otomatis (mode jadwal)
+ *
+ * Untuk cron, HANYA `true` yang berarti nyala; null, string, angka, atau
+ * nilai rusak apa pun = mati. Pemicu yang tidak dikenal = tidak jalan.
  */
 export function keputusanSinkron(a: {
   pemicu: "cron" | "admin";
-  sinkronPesanan: unknown;
+  ikutOtomatis: unknown;
   modeOtomatis: unknown;
 }): KeputusanSinkron {
-  if (a.sinkronPesanan !== true) return "dilewati_toko_nonaktif";
   if (a.pemicu === "admin") return "jalan";
+  if (a.ikutOtomatis !== true) return "dilewati_tidak_ikut_otomatis";
   if (a.pemicu === "cron" && a.modeOtomatis === true) return "jalan";
   return "dilewati_mode_manual";
 }
 
-/* ---------------- Tombol "Sinkronkan sekarang" ---------------- */
+/* ---------------- Tombol "Sinkronkan" ---------------- */
 
 /** Batas putaran per toko per klik — pagar terhadap putaran tanpa akhir. */
 export const MAKS_PUTARAN_TOMBOL = 40;

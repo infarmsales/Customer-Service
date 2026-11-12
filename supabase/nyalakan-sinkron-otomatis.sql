@@ -3,7 +3,9 @@
 --
 -- Sakelar 2. Mengubah settings.sinkron_pesanan_otomatis = true DAN
 -- menyalakan job pg_cron shopee-orders-per-toko dalam satu transaksi.
--- Hanya toko dengan sinkron_pesanan = true yang ditarik (sakelar 1).
+-- Hanya toko dengan ikut_sinkron_otomatis = true yang ditarik (sakelar 1,
+-- atur-sinkron-otomatis-toko.sql). Tanpa satu pun toko yang ikut, job
+-- berjalan tetapi tidak memanggil apa-apa. Tombol Sinkronkan tetap bekerja.
 --
 -- Prasyarat: migrasi 20261112120000_sinkron_skala_besar.sql sudah jalan.
 -- SEBELUM MENJALANKAN: tidak ada yang perlu diganti.
@@ -30,12 +32,12 @@ where jobname in ('shopee-orders-15m', 'shopee-orders-per-toko', 'shopee-tokens-
 order by jobname;
 
 -- 3. Toko + sakelar 1
-select shop_name, external_shop_id, is_active, sinkron_pesanan,
+select shop_name, external_shop_id, is_active, ikut_sinkron_otomatis,
        orders_synced_until, sinkron_terakhir_pada, sinkron_terakhir_status,
        cek_token_pada, cek_token_ok, cek_token_galat
 from public.marketplace_shops
 where platform = 'shopee'
-order by sinkron_pesanan desc, shop_name;
+order by ikut_sinkron_otomatis desc, shop_name;
 
 -- 4. Lima panggilan pg_net terakhir. status_code 200 + "dilewati_..." itu
 --    normal; 401 = CRON_SECRET tidak cocok; timed_out = pg_net berhenti

@@ -11,7 +11,7 @@
 
 -- 1. Jumlah pesanan per toko
 select coalesce(s.shop_name, s.external_shop_id) as toko,
-       s.sinkron_pesanan,
+       s.ikut_sinkron_otomatis,
        count(o.id)                                              as pesanan,
        count(o.id) filter (where o.order_created_at > now() - interval '7 days') as dibuat_7_hari,
        min(o.order_created_at)                                  as tertua,
@@ -19,7 +19,7 @@ select coalesce(s.shop_name, s.external_shop_id) as toko,
 from public.marketplace_shops s
 left join public.orders o on o.shop_id = s.id
 where s.platform = 'shopee'
-group by s.id, s.shop_name, s.external_shop_id, s.sinkron_pesanan
+group by s.id, s.shop_name, s.external_shop_id, s.ikut_sinkron_otomatis
 order by pesanan desc;
 
 

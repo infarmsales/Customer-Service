@@ -140,9 +140,9 @@ uji(
 
 console.log("\nToko yang belum disinkronkan (toko besar yang baru diotorisasi)");
 uji(
-  "toko belum disinkron diberi keterangan",
+  "toko yang belum pernah disinkron diberi keterangan",
   pilihanToko(daftar, toko).find((o) => o.value === "D")?.label,
-  "Toko Besar · shopee — pesanan belum disinkronkan",
+  "Toko Besar · shopee — belum pernah disinkronkan",
 );
 uji("toko tersinkron tanpa keterangan", pilihanToko(daftar, toko).find((o) => o.value === "A")?.label, "Infarm Kecil · shopee");
 uji("pilih toko belum disinkron -> peringatan", tokoBelumDisinkron("D", toko)?.nama, "Toko Besar");

@@ -8,20 +8,25 @@
 -- MASALAH YANG DIPECAHKAN
 --
 -- Toko utama Infarm (3.000–4.000 pesanan/hari) akan diotorisasi lewat
--- akun utama. Toko itu harus TERHUBUNG (tokennya diperpanjang), tetapi
--- pesanannya BELUM BOLEH ditarik: kode lama akan macet selamanya pada
--- sinkron pertama dan database Free 500 MB penuh dalam ±5 minggu.
+-- akun utama. Kode lama macet selamanya pada sinkron pertama toko
+-- sebesar itu, dan job 15 menit akan menariknya terus tanpa ditanya.
 --
--- DUA SAKELAR, KEDUANYA LEWAT SQL — tanpa ubah kode, tanpa deploy:
+-- TOMBOL DULU, JADWAL NANTI
 --
---   1. marketplace_shops.sinkron_pesanan (per toko, bawaan FALSE)
---        Toko baru — termasuk SETIAP toko yang masuk lewat shop_id_list
---        otorisasi akun utama — tidak pernah ikut tersinkron hanya
---        karena baru diotorisasi. Ubah dengan atur_sinkron_toko().
+--   Tombol "Sinkronkan" di Pengaturan ada di SETIAP toko dan bisa dipakai
+--   admin kapan saja, untuk toko mana pun. Kapan menyinkronkan adalah
+--   keputusan admin. Yang diatur lewat SQL hanya JADWAL otomatisnya:
+--
+--   1. marketplace_shops.ikut_sinkron_otomatis (per toko, bawaan FALSE)
+--        Toko ini ikut ditarik job otomatis. Toko baru — termasuk SETIAP
+--        toko dari shop_id_list otorisasi akun utama — tidak pernah ikut
+--        jadwal hanya karena baru diotorisasi. Ubah dengan
+--        atur_sinkron_otomatis_toko().
 --   2. settings.sinkron_pesanan_otomatis (mode jadwal, bawaan FALSE)
---        false = manual: hanya tombol "Sinkronkan sekarang". Ubah dengan
---        atur_sinkron_otomatis(), yang sekaligus menyalakan/mematikan job
---        pg_cron — keduanya tidak bisa berbeda keadaan.
+--        false = manual. Ubah dengan atur_sinkron_otomatis(), yang
+--        sekaligus menyalakan/mematikan job pg_cron — keduanya tidak bisa
+--        berbeda keadaan.
+--   Job otomatis hanya menarik toko bila KEDUANYA nyala.
 --
 -- Job 'shopee-tokens-harian' TIDAK disentuh: tetap aktif untuk semua toko,
 -- apa pun nilai kedua sakelar.
@@ -30,24 +35,15 @@
 -- SEBELUM MENJALANKAN
 -- ===========================================================
 --
--- 1. Ganti GANTI_SHOP_ID_JAKARTA (bagian 3) dengan external_shop_id toko
---    infarmjakarta. Lihat di Pengaturan -> Integrasi Marketplace (baris
---    "shop_id ..." di kartu toko), atau jalankan dulu:
+-- 1. TIDAK ADA yang perlu diganti dalam keadaan normal. URL Vercel dan
+--    CRON_SECRET untuk job baru DISALIN OTOMATIS dari job lama
+--    'shopee-orders-15m', jadi rahasianya tidak perlu diketik ulang.
+--    Hanya bila job lama tidak ada (berkas berhenti dengan pesan galat),
+--    isi GANTI_URL_VERCEL dan GANTI_CRON_SECRET di bagian 6.
 --
---      select shop_name, external_shop_id, is_active
---      from public.marketplace_shops where platform = 'shopee';
---
---    Kalau placeholder tidak diganti atau id-nya tidak ditemukan, SELURUH
---    berkas dibatalkan dengan pesan galat — tidak ada yang setengah jadi.
---
--- 2. URL Vercel dan CRON_SECRET untuk job baru DISALIN OTOMATIS dari job
---    lama 'shopee-orders-15m', jadi rahasianya tidak perlu diketik ulang.
---    Hanya bila job lama tidak ada, isi GANTI_URL_VERCEL dan
---    GANTI_CRON_SECRET di bagian 6.
---
--- 3. Jalankan SEBELUM kode branch ini di-merge/deploy. (Kode baru tetap
---    berjalan aman tanpa migrasi ini — semua toko dianggap tidak
---    disinkronkan — tetapi tidak ada toko yang bisa disinkronkan.)
+-- 2. Jalankan SEBELUM kode branch ini di-merge/deploy. (Kode baru tetap
+--    berjalan tanpa migrasi ini, tetapi tombol Sinkronkan akan gagal
+--    menyimpan kunci per toko sampai kolomnya ada.)
 --
 -- Cara pakai: SQL Editor -> tempel seluruh isi -> Run. Idempoten.
 -- ===========================================================
@@ -59,7 +55,7 @@ begin;
 -- ===========================================================
 
 alter table public.marketplace_shops
-  add column if not exists sinkron_pesanan        boolean not null default false,
+  add column if not exists ikut_sinkron_otomatis        boolean not null default false,
   add column if not exists sinkron_kunci_sampai   timestamptz,
   add column if not exists sinkron_terakhir_pada  timestamptz,
   add column if not exists sinkron_terakhir_status text,
@@ -67,8 +63,8 @@ alter table public.marketplace_shops
   add column if not exists cek_token_ok           boolean,
   add column if not exists cek_token_galat        text;
 
-comment on column public.marketplace_shops.sinkron_pesanan is
-  'Sakelar 1: pesanan toko ini boleh ditarik (tombol maupun jadwal). Bawaan false, termasuk toko baru dari otorisasi akun utama. Ubah dengan atur_sinkron_toko().';
+comment on column public.marketplace_shops.ikut_sinkron_otomatis is
+  'Sakelar 1: toko ini ikut ditarik job otomatis shopee-orders-per-toko (bila mode otomatis nyala). Tidak memengaruhi tombol Sinkronkan admin. Bawaan false, termasuk toko baru dari otorisasi akun utama. Ubah dengan atur_sinkron_otomatis_toko().';
 comment on column public.marketplace_shops.sinkron_kunci_sampai is
   'Kunci sinkron pesanan per toko: proses yang sedang menarik memegangnya sampai waktu ini. Kunci milik fungsi yang mati lepas sendiri (lib/shopee/sinkron.ts).';
 comment on column public.marketplace_shops.sinkron_terakhir_status is
@@ -92,39 +88,26 @@ comment on column public.settings.sinkron_pesanan_otomatis is
 
 
 -- ===========================================================
--- 3. Nyalakan sinkron HANYA untuk toko Jakarta
+-- 3. Toko mana yang ikut sinkron OTOMATIS — sengaja belum ada
 -- ===========================================================
-
-do $blk$
-declare
-  v_id text := trim('GANTI_SHOP_ID_JAKARTA');
-  v_n  int;
-begin
-  if v_id !~ '^\d+$' then
-    raise exception 'Ganti GANTI_SHOP_ID_JAKARTA dengan external_shop_id toko infarmjakarta (angka) sebelum menjalankan berkas ini.';
-  end if;
-  update public.marketplace_shops
-     set sinkron_pesanan = true
-   where platform = 'shopee' and external_shop_id = v_id;
-  get diagnostics v_n = row_count;
-  if v_n <> 1 then
-    raise exception 'Toko Shopee dengan external_shop_id % tidak ditemukan. Tidak ada yang diubah.', v_id;
-  end if;
-end
-$blk$;
+-- Semua toko mulai dengan ikut_sinkron_otomatis = false. Ini TIDAK
+-- menghalangi tombol "Sinkronkan" di Pengaturan, yang bisa dipakai admin
+-- untuk toko mana pun kapan saja. Sakelar ini baru berarti saat mode
+-- otomatis dinyalakan; tandai tokonya waktu itu dengan
+-- supabase/atur-sinkron-otomatis-toko.sql.
 
 
 -- ===========================================================
--- 4. atur_sinkron_toko() — sakelar 1
+-- 4. atur_sinkron_otomatis_toko() — sakelar 1
 -- ===========================================================
 
-create or replace function public.atur_sinkron_toko(p_external_shop_id text, nyala boolean)
+create or replace function public.atur_sinkron_otomatis_toko(p_external_shop_id text, nyala boolean)
 returns table (
   id                  uuid,
   shop_name           text,
   external_shop_id    text,
   is_active           boolean,
-  sinkron_pesanan     boolean,
+  ikut_sinkron_otomatis     boolean,
   orders_synced_until timestamptz
 )
 language plpgsql
@@ -141,10 +124,10 @@ begin
   return query
     with diubah as (
       update public.marketplace_shops s
-         set sinkron_pesanan = nyala
+         set ikut_sinkron_otomatis = nyala
        where s.platform = 'shopee'
          and s.external_shop_id = trim(p_external_shop_id)
-      returning s.id, s.shop_name, s.external_shop_id, s.is_active, s.sinkron_pesanan, s.orders_synced_until
+      returning s.id, s.shop_name, s.external_shop_id, s.is_active, s.ikut_sinkron_otomatis, s.orders_synced_until
     )
     select * from diubah;
 
@@ -155,11 +138,11 @@ begin
 end
 $fn$;
 
-comment on function public.atur_sinkron_toko(text, boolean) is
-  'Sakelar 1: boleh/tidaknya pesanan satu toko Shopee ditarik. Hanya postgres/service_role.';
+comment on function public.atur_sinkron_otomatis_toko(text, boolean) is
+  'Sakelar 1: satu toko Shopee ikut/tidak ditarik job otomatis. Tombol Sinkronkan admin tidak terpengaruh. Hanya postgres/service_role.';
 
-revoke all on function public.atur_sinkron_toko(text, boolean) from public, anon, authenticated;
-grant execute on function public.atur_sinkron_toko(text, boolean) to service_role;
+revoke all on function public.atur_sinkron_otomatis_toko(text, boolean) from public, anon, authenticated;
+grant execute on function public.atur_sinkron_otomatis_toko(text, boolean) to service_role;
 
 
 -- ===========================================================
@@ -219,7 +202,7 @@ grant execute on function public.atur_sinkron_otomatis(boolean) to service_role;
 -- panggilan tanpa ?toko (400, tanpa menyentuh Shopee), jadi job lama
 -- dimatikan — bukan dihapus — supaya riwayatnya tetap terlihat.
 --
--- Job pengganti memanggil route SEKALI PER TOKO yang sinkron_pesanan =
+-- Job pengganti memanggil route SEKALI PER TOKO yang ikut_sinkron_otomatis =
 -- true. net.http_post hanya mengantre; panggilan per toko berjalan
 -- sejajar di Vercel, dan toko besar tidak memakan waktu toko lain.
 --
@@ -264,7 +247,7 @@ begin
       timeout_milliseconds := 300000
     )
     from public.marketplace_shops s
-    where s.platform = 'shopee' and s.is_active and s.sinkron_pesanan
+    where s.platform = 'shopee' and s.is_active and s.ikut_sinkron_otomatis
     limit 50;
     $cmd$,
     v_url,
@@ -303,12 +286,12 @@ order by jobname;
 
 
 -- ===========================================================
--- CEK 2 — hanya toko Jakarta yang sinkron_pesanan = true
+-- CEK 2 — daftar toko; ikut_sinkron_otomatis semuanya false (tombol tetap bisa dipakai)
 -- ===========================================================
-select shop_name, external_shop_id, is_active, sinkron_pesanan, orders_synced_until
+select shop_name, external_shop_id, is_active, ikut_sinkron_otomatis, orders_synced_until
 from public.marketplace_shops
 where platform = 'shopee'
-order by sinkron_pesanan desc, shop_name;
+order by ikut_sinkron_otomatis desc, shop_name;
 
 
 -- ===========================================================
@@ -323,5 +306,5 @@ select f.fungsi,
        has_function_privilege('anon',          f.fungsi, 'execute') as anon,
        has_function_privilege('authenticated', f.fungsi, 'execute') as authenticated,
        has_function_privilege('service_role',  f.fungsi, 'execute') as service_role
-from (values ('public.atur_sinkron_toko(text, boolean)'),
+from (values ('public.atur_sinkron_otomatis_toko(text, boolean)'),
              ('public.atur_sinkron_otomatis(boolean)')) as f(fungsi);

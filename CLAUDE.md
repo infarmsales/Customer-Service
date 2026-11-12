@@ -61,8 +61,8 @@ pemilik proyek menjawab.
 | `npm run uji-shopee-push` | 31 kasus penerima push Shopee: tanda tangan `URL\|body` cocok OpenSSL, body yang diubah satu spasi atau URL beda satu garis miring DITOLAK, kunci sandbox & live dicoba, dan pemetaan `webchat_push` (pembeli → `user`, toko/auto-reply → `cs`, notifikasi & kode lain diabaikan) |
 | `npm run uji-tiktok` | 62 kasus TikTok Shop tanpa jaringan: tanda tangan cocok dengan contoh dokumentasi (diverifikasi OpenSSL), access token hanya di header `x-tts-access-token`, `code` bukan 0 = galat walau HTTP 200, `grant_type=authorized_code`, pesan galat TIDAK PERNAH memuat app secret atau token, dan pemeta chat → conversations (robot TikTok jadi `cs` bukan `assistant`, sinkron berulang tidak menggandakan pesan), dan badan Send Message yang dikirim persis badan yang ditandatangani |
 | `npm run uji-pesanan-pembeli` | Pencocokan pesanan nyata ke percakapan di panel Chat: simulasi tidak pernah dicocokkan, id angka vs nama akun, filter PostgREST aman dari koma, dan terlambat hanya untuk perlu_dikirim |
-| `npm run uji-daftar-pesanan` | 42 kasus tab Daftar Pesanan (tabel orders asli): nomor/resi bertanda baca tetap ketemu, status asing tetap punya chip, toko tak dikenal tidak hilang dari pilihan, toko yang belum disinkronkan diberi peringatan (daftar kosong ≠ tidak ada pesanan) |
-| `npm run uji-shopee-sinkron` | 97 kasus sinkron pesanan skala besar: potongan per jam & pembelahan adaptif, anggaran waktu, titik sinkron yang hanya maju setelah potongan tersimpan (simulasi toko 8.000 pesanan/hari), kunci kedaluwarsa, lewati tulis yang tidak berubah, `SHOPEE_SIMPAN_RAW`, tabel keputusan dua sakelar (nilai rusak = dilewati), dan toko baru dari `shop_id_list` = `sinkron_pesanan` false |
+| `npm run uji-daftar-pesanan` | 42 kasus tab Daftar Pesanan (tabel orders asli): nomor/resi bertanda baca tetap ketemu, status asing tetap punya chip, toko tak dikenal tidak hilang dari pilihan, toko yang belum pernah disinkronkan diberi peringatan (daftar kosong ≠ tidak ada pesanan) |
+| `npm run uji-shopee-sinkron` | 104 kasus sinkron pesanan skala besar: potongan per jam & pembelahan adaptif, anggaran waktu, titik sinkron yang hanya maju setelah potongan tersimpan (simulasi toko 8.000 pesanan/hari), kunci kedaluwarsa, lewati tulis yang tidak berubah, `SHOPEE_SIMPAN_RAW`, tabel keputusan: tombol admin selalu jalan, cron butuh kedua sakelar (nilai rusak = dilewati), dan toko baru dari `shop_id_list` tidak ikut jadwal otomatis |
 | `npm run uji-ringkasan` | 21 kasus angka nyata Beranda & Statistik: antrean tertua (bukan rata-rata), rentang waktu, dan nol yang berbeda dari "belum ada data" |
 | `npm run uji-pesanan` | 26 kasus pesanan contoh di tab Pesanan: nomor tidak pernah berubah (kalau berubah, pencarian diam-diam gagal), data asli tidak ditimpa, katalog kosong tidak mengarang nama produk |
 | `npm run uji-cari` | 46 kasus pencocokan pencarian & papan croscek: nomor bertanda baca tetap ketemu, nama pendek TIDAK melebar, nomor yang tidak ketemu tidak pernah hilang dari daftar |
@@ -94,20 +94,23 @@ diam-diam. Jangan menulis seolah sesuatu sudah terbukti padahal belum.
 
 ## Mode sinkron pesanan Shopee
 
-Dua sakelar, keduanya diubah **lewat SQL** (tanpa ubah kode, tanpa deploy).
-Server memeriksa keduanya sebelum menyentuh Shopee — jangan menambah
-jalur yang melewatinya.
+**Tombol dulu, jadwal nanti.** Setiap toko Shopee yang terhubung punya
+tombol **Sinkronkan** di Pengaturan → Integrasi Marketplace; admin bebas
+memakainya kapan saja untuk toko mana pun. Yang diatur lewat SQL hanya
+JADWAL otomatis — job tiap 15 menit hanya menarik toko bila **kedua**
+sakelar nyala. Server memeriksanya sebelum menyentuh Shopee; jangan
+menambah jalur cron yang melewatinya.
 
-| Sakelar | Keadaan sekarang | Cara mengubah |
+| Sakelar (hanya untuk jadwal) | Keadaan sekarang | Cara mengubah |
 |---|---|---|
-| Per toko: `marketplace_shops.sinkron_pesanan` (bawaan `false`, termasuk toko baru dari otorisasi akun utama) | Hanya **infarmjakarta** yang `true` | `supabase/nyalakan-sinkron-toko.sql` → `atur_sinkron_toko('<shop_id>', true/false)` |
-| Mode jadwal: `settings.sinkron_pesanan_otomatis` + job pg_cron `shopee-orders-per-toko` | **Manual** — hanya tombol "Sinkronkan sekarang" | `supabase/nyalakan-sinkron-otomatis.sql` / `matikan-sinkron-otomatis.sql` |
+| Per toko: `marketplace_shops.ikut_sinkron_otomatis` (bawaan `false`, termasuk toko baru dari otorisasi akun utama) | Semua `false` | `supabase/atur-sinkron-otomatis-toko.sql` → `atur_sinkron_otomatis_toko('<shop_id>', true/false)` |
+| Mode jadwal: `settings.sinkron_pesanan_otomatis` + job pg_cron `shopee-orders-per-toko` | **Mati (manual)** | `supabase/nyalakan-sinkron-otomatis.sql` / `matikan-sinkron-otomatis.sql` |
 
 - Perpanjangan token + cek `get_shop_info` harian (job `shopee-tokens-harian`)
   **tetap otomatis untuk SEMUA toko aktif**, apa pun nilai kedua sakelar.
   Kalau dimatikan, toko harus diotorisasi ulang (OTP akun utama) 30 hari kemudian.
-- Sebelum menyalakan toko besar: jalankan `supabase/periksa-ukuran.sql`
-  dan pastikan paket database cukup.
+- Sebelum menyinkronkan toko besar (lewat tombol maupun jadwal): jalankan
+  `supabase/periksa-ukuran.sql` dan pastikan paket database cukup.
 - Jangan memicu `/api/sync/*` di production dari agen coding.
 
 ## Aturan perilaku AI CS

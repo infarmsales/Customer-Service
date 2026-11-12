@@ -69,7 +69,7 @@ const KOLOM_LAYAR_DASAR =
 /** Kolom dari migrasi 20261112120000_sinkron_skala_besar.sql. */
 const KOLOM_LAYAR =
   KOLOM_LAYAR_DASAR +
-  ", sinkron_pesanan, sinkron_kunci_sampai, sinkron_terakhir_pada, sinkron_terakhir_status, " +
+  ", ikut_sinkron_otomatis, sinkron_kunci_sampai, sinkron_terakhir_pada, sinkron_terakhir_status, " +
   "cek_token_pada, cek_token_ok, cek_token_galat";
 
 /** Kode Postgres "undefined_column". */
@@ -101,8 +101,8 @@ export type TokoUntukLayar = {
   /** Sampai kapan pesanan toko ini sudah ditarik; null = belum pernah. */
   orders_synced_until: string | null;
   updated_at: string;
-  /** Sakelar 1: pesanan toko ini boleh ditarik. false bila migrasi belum dijalankan. */
-  sinkron_pesanan: boolean;
+  /** Toko ini ikut ditarik job otomatis (bila mode otomatis nyala). Tombol admin tidak terpengaruh. false bila migrasi belum dijalankan. */
+  ikut_sinkron_otomatis: boolean;
   sinkron_kunci_sampai: string | null;
   sinkron_terakhir_pada: string | null;
   sinkron_terakhir_status: string | null;
@@ -114,7 +114,7 @@ export type TokoUntukLayar = {
 
 /** Nilai kolom baru saat migrasi skala besar belum dijalankan — semua ke arah aman. */
 const KOLOM_BARU_KOSONG = {
-  sinkron_pesanan: false,
+  ikut_sinkron_otomatis: false,
   sinkron_kunci_sampai: null,
   sinkron_terakhir_pada: null,
   sinkron_terakhir_status: null,
@@ -214,7 +214,7 @@ export async function simpanTokoBaru(shopId: string, token: TokenToko): Promise<
   const sb = getSupabaseAdmin();
   const { data, error } = await sb
     .from(TABEL)
-    /* barisSimpanToko() sengaja tanpa sinkron_pesanan: toko baru = false
+    /* barisSimpanToko() sengaja tanpa ikut_sinkron_otomatis: toko baru = false
        (bawaan kolom), toko lama yang diotorisasi ulang tidak berubah. */
     .upsert(barisSimpanToko(PLATFORM, shopId, token), { onConflict: "platform,external_shop_id" })
     .select("id")

@@ -7,8 +7,9 @@
    Pemicu yang sah: Bearer CRON_SECRET, atau sesi admin
    (lib/sync/penjaga.ts). Lalu, SEBELUM Shopee disentuh,
    sinkronkanToko() memeriksa:
-     - sakelar toko (sinkron_pesanan)   false -> dilewati_toko_nonaktif
-     - mode jadwal (khusus cron)        manual -> dilewati_mode_manual
+     - tombol admin                     SELALU boleh, toko mana pun
+     - cron: ikut_sinkron_otomatis      false  -> dilewati_tidak_ikut_otomatis
+     - cron: mode jadwal                manual -> dilewati_mode_manual
      - kunci per toko                   dipegang -> dilewati_sedang_berjalan
    Semua "dilewati" dijawab 200 — bukan kegagalan, dan pg_cron tidak
    perlu mencatatnya sebagai galat.

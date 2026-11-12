@@ -9,7 +9,7 @@
    galat di layar:
      - sinkron pertama toko besar yang macet selamanya (titik sinkron
        tidak pernah maju, jendela makin lebar)
-     - toko besar yang ikut tersinkron hanya karena baru diotorisasi
+     - toko besar yang ikut ditarik JADWAL otomatis hanya karena baru diotorisasi
        lewat akun utama
      - cron yang menarik pesanan padahal mode jadwal manual
      - kunci yang tertinggal dan mengunci toko selamanya
@@ -263,22 +263,27 @@ console.log("\nSHOPEE_SIMPAN_RAW");
 /* ------------------------------------------------------------ */
 console.log("\nDua sakelar — tabel keputusan");
 {
-  const k = (pemicu, sinkronPesanan, modeOtomatis) => keputusanSinkron({ pemicu, sinkronPesanan, modeOtomatis });
-  uji("toko nonaktif + tombol admin = dilewati", k("admin", false, true), "dilewati_toko_nonaktif");
-  uji("toko nonaktif + cron = dilewati", k("cron", false, true), "dilewati_toko_nonaktif");
-  uji("toko aktif + cron + mode manual = dilewati", k("cron", true, false), "dilewati_mode_manual");
-  uji("toko aktif + tombol admin = jalan", k("admin", true, false), "jalan");
-  uji("toko aktif + tombol admin, mode otomatis = jalan", k("admin", true, true), "jalan");
-  uji("toko aktif + cron + mode otomatis = jalan", k("cron", true, true), "jalan");
+  const k = (pemicu, ikutOtomatis, modeOtomatis) => keputusanSinkron({ pemicu, ikutOtomatis, modeOtomatis });
+  /* Tombol admin: SELALU jalan, untuk toko mana pun (diminta pemilik proyek). */
+  uji("tombol admin + toko tidak ikut otomatis = jalan", k("admin", false, false), "jalan");
+  uji("tombol admin + toko tidak ikut otomatis, mode otomatis = jalan", k("admin", false, true), "jalan");
+  uji("tombol admin + toko ikut otomatis, mode manual = jalan", k("admin", true, false), "jalan");
+  uji("tombol admin + toko ikut otomatis, mode otomatis = jalan", k("admin", true, true), "jalan");
+  /* Cron: hanya bila KEDUA sakelar nyala. */
+  uji("cron + toko tidak ikut otomatis = dilewati", k("cron", false, true), "dilewati_tidak_ikut_otomatis");
+  uji("cron + toko ikut otomatis + mode manual = dilewati", k("cron", true, false), "dilewati_mode_manual");
+  uji("cron + toko ikut otomatis + mode otomatis = jalan", k("cron", true, true), "jalan");
   for (const rusak of [null, undefined, "true", 1, "ya", {}]) {
-    uji(`kolom toko rusak ${JSON.stringify(rusak) ?? "undefined"} = dilewati (aman)`, k("admin", rusak, true), "dilewati_toko_nonaktif");
-    uji(`setting rusak ${JSON.stringify(rusak) ?? "undefined"} + cron = dilewati (aman)`, k("cron", true, rusak), "dilewati_mode_manual");
+    const n = JSON.stringify(rusak) ?? "undefined";
+    uji(`cron + kolom toko rusak ${n} = dilewati (aman)`, k("cron", rusak, true), "dilewati_tidak_ikut_otomatis");
+    uji(`cron + setting rusak ${n} = dilewati (aman)`, k("cron", true, rusak), "dilewati_mode_manual");
+    uji(`tombol admin + kolom toko rusak ${n} = tetap jalan`, k("admin", rusak, rusak), "jalan");
   }
   uji("pemicu asing = tidak jalan", k("tamu", true, true), "dilewati_mode_manual");
 }
 
 /* ------------------------------------------------------------ */
-console.log("\nToko baru dari otorisasi = sinkron_pesanan false");
+console.log("\nToko baru dari otorisasi = ikut_sinkron_otomatis false");
 {
   const token = {
     accessToken: "a",
@@ -287,15 +292,15 @@ console.log("\nToko baru dari otorisasi = sinkron_pesanan false");
     refreshExpiresAt: new Date("2026-12-12T10:00:00Z"),
   };
   const satu = barisSimpanToko("shopee", "123", token);
-  uji("baris simpan TIDAK memuat sinkron_pesanan (bawaan kolom = false)", "sinkron_pesanan" in satu, false);
+  uji("baris simpan TIDAK memuat ikut_sinkron_otomatis (bawaan kolom = false)", "ikut_sinkron_otomatis" in satu, false);
   uji("toko tetap aktif (terhubung)", satu.is_active, true);
   const dariAkunUtama = daftarTokoAkunUtama([111, 222, 333]).map((id) => barisSimpanToko("shopee", id, token));
-  uji("setiap toko dari shop_id_list juga tanpa sinkron_pesanan", dariAkunUtama.every((b) => !("sinkron_pesanan" in b)), true);
+  uji("setiap toko dari shop_id_list juga tanpa ikut_sinkron_otomatis", dariAkunUtama.every((b) => !("ikut_sinkron_otomatis" in b)), true);
   uji("semua toko dari shop_id_list tersimpan", dariAkunUtama.map((b) => b.external_shop_id), ["111", "222", "333"]);
 }
 
 /* ------------------------------------------------------------ */
-console.log("\nlanjutPutaran — tombol Sinkronkan sekarang");
+console.log("\nlanjutPutaran — tombol Sinkronkan");
 {
   uji("belum_selesai = lanjut", lanjutPutaran("belum_selesai", 1, false), true);
   uji("selesai = berhenti", lanjutPutaran("selesai", 1, false), false);

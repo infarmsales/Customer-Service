@@ -226,10 +226,11 @@ export function daftarTokoAkunUtama(list: unknown): string[] {
  * Isi upsert marketplace_shops untuk toko yang baru diotorisasi
  * (akun toko maupun setiap shop_id dari otorisasi akun utama).
  *
- * SENGAJA TIDAK memuat sinkron_pesanan: toko BARU mendapat bawaan kolom
+ * SENGAJA TIDAK memuat ikut_sinkron_otomatis: toko BARU mendapat bawaan kolom
  * (false), dan toko LAMA yang diotorisasi ulang mempertahankan nilainya.
- * Toko besar tidak boleh ikut tersinkron hanya karena baru diotorisasi
- * lewat akun utama. Diuji di uji-shopee-sinkron.mjs.
+ * Toko besar tidak boleh ikut ditarik JADWAL otomatis hanya karena baru
+ * diotorisasi lewat akun utama — sinkron toko itu hanya lewat tombol,
+ * kapan admin mau. Diuji di uji-shopee-sinkron.mjs.
  */
 export function barisSimpanToko(
   platform: string,

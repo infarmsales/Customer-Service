@@ -11,14 +11,15 @@
 
    SINKRON PESANAN (perbaikan-sinkron-skala-besar, 12 Nov 2026)
 
-   - Label mode "manual"/"otomatis" dan "Sinkron pesanan aktif/nonaktif"
-     per toko hanya LABEL. Mengubahnya tetap lewat SQL (berkas di
-     supabase/: nyalakan-sinkron-*.sql) — sengaja tidak ada tombolnya.
-   - "Sinkronkan sekarang" memanggil route SATU TOKO per panggilan,
-     hanya untuk toko yang sinkron_pesanan-nya aktif, dan mengulang
-     selama jawabannya "belum_selesai" (dicicil per jam di server).
-     Dibatasi MAKS_PUTARAN_TOMBOL dan bisa dihentikan. Server memeriksa
-     sakelarnya lagi — tombol yang disembunyikan bukan pengaman.
+   - SETIAP toko Shopee yang terhubung punya tombol "Sinkronkan" sendiri;
+     kapan menyinkronkan toko mana adalah keputusan admin.
+   - Label "Sinkron otomatis: nyala/mati" dan "Ikut sinkron otomatis"
+     per toko hanya LABEL untuk job terjadwal. Mengubahnya lewat SQL
+     (supabase/nyalakan-sinkron-otomatis.sql, atur-sinkron-otomatis-toko.sql).
+   - Tombol memanggil route untuk toko itu saja dan mengulang selama
+     jawabannya "belum_selesai" (dicicil per jam di server). Satu toko
+     pada satu waktu, dibatasi MAKS_PUTARAN_TOMBOL, bisa dihentikan.
+     Route memeriksa peran admin lagi — tombol tersembunyi bukan pengaman.
 
    Pesan hasil otorisasi dibaca dari window.location di dalam effect,
    bukan lewat useSearchParams — yang terakhir menuntut batas Suspense
@@ -44,7 +45,7 @@ type Toko = {
   /** Sampai kapan pesanan toko ini sudah ditarik; null = belum pernah. */
   orders_synced_until?: string | null;
   updated_at: string;
-  sinkron_pesanan?: boolean;
+  ikut_sinkron_otomatis?: boolean;
   sinkron_terakhir_pada?: string | null;
   sinkron_terakhir_status?: string | null;
   cek_token_pada?: string | null;
@@ -97,7 +98,8 @@ const LABEL_STATUS: Record<string, string> = {
   selesai: "selesai",
   belum_selesai: "dicicil…",
   galat: "gagal",
-  dilewati_toko_nonaktif: "dilewati — sinkron toko ini nonaktif",
+  dilewati_tidak_ikut_otomatis: "dilewati — toko tidak ikut sinkron otomatis",
+  dihentikan: "dihentikan",
   dilewati_mode_manual: "dilewati — mode manual",
   dilewati_perlu_otorisasi: "dilewati — perlu otorisasi ulang",
   dilewati_sedang_berjalan: "dilewati — sedang disinkronkan proses lain",
@@ -106,8 +108,10 @@ const LABEL_STATUS: Record<string, string> = {
 
 const labelStatus = (s: string | null | undefined) => (s ? (LABEL_STATUS[s] ?? s) : "—");
 
-/** Toko yang pesanannya ikut "Sinkronkan sekarang". */
-const ikutSinkron = (t: Toko) => t.platform === "shopee" && t.sinkron_pesanan === true && t.is_active;
+/** Toko yang punya tombol Sinkronkan: semua toko Shopee yang masih terhubung. */
+const bisaDisinkron = (t: Toko) => t.platform === "shopee" && t.is_active;
+
+const KEMAJUAN_AWAL: Kemajuan = { status: "belum_selesai", putaran: 0, potongan: 0, sisa: 0, disimpan: 0, dilewati: 0, titik: null };
 
 export default function TokoTerhubung() {
   const { isAdmin } = useAuth();
@@ -116,66 +120,66 @@ export default function TokoTerhubung() {
   const [galat, setGalat] = useState<string | null>(null);
   const [hasil, setHasil] = useState<Hasil>(null);
   const [muatUlang, setMuatUlang] = useState(0);
-  const [jalan, setJalan] = useState(false);
+  /** id toko yang sedang disinkronkan; satu toko pada satu waktu. */
+  const [jalan, setJalan] = useState<string | null>(null);
   const [kemajuan, setKemajuan] = useState<Record<string, Kemajuan>>({});
-  const [galatSinkron, setGalatSinkron] = useState<string | null>(null);
   const berhenti = useRef(false);
 
-  const perbarui = (id: string, ubah: (k: Kemajuan) => Kemajuan) =>
-    setKemajuan((m) => ({
-      ...m,
-      [id]: ubah(m[id] ?? { status: "belum_selesai", putaran: 0, potongan: 0, sisa: 0, disimpan: 0, dilewati: 0, titik: null }),
-    }));
-
-  /* Hanya admin yang melihat tombolnya, dan rute di baliknya memeriksa
-     peran admin DAN sakelar toko lagi di server. */
-  const sinkronSekarang = async () => {
-    const target = (daftar ?? []).filter(ikutSinkron);
+  /* Tombol per toko. Hanya admin yang melihatnya, dan route di baliknya
+     memeriksa peran admin lagi di server. Kapan menyinkronkan toko mana
+     sepenuhnya keputusan admin — sakelar "ikut otomatis" hanya mengatur
+     job terjadwal. Mengulang selama server menjawab "belum_selesai". */
+  const sinkronToko = async (t: Toko) => {
+    if (jalan) return;
     berhenti.current = false;
-    setGalatSinkron(null);
-    setKemajuan({});
-    if (target.length === 0) {
-      setGalatSinkron("Tidak ada toko dengan sinkron pesanan aktif.");
-      return;
-    }
-    setJalan(true);
+    setJalan(t.id);
+    setKemajuan((m) => ({ ...m, [t.id]: KEMAJUAN_AWAL }));
     try {
-      for (const t of target) {
-        let putaran = 0;
-        let status: unknown = null;
-        do {
-          putaran += 1;
-          try {
-            const res = await fetch(`/api/sync/shopee-orders?toko=${encodeURIComponent(t.id)}`, {
-              method: "POST",
-              headers: await headerBerSesi(),
-            });
-            const data = (await res.json().catch(() => ({}))) as {
-              status?: string;
-              error?: string;
-              ringkasan?: RingkasanRoute | null;
+      let putaran = 0;
+      let status: string = "galat";
+      do {
+        putaran += 1;
+        const ke = putaran;
+        try {
+          const res = await fetch(`/api/sync/shopee-orders?toko=${encodeURIComponent(t.id)}`, {
+            method: "POST",
+            headers: await headerBerSesi(),
+          });
+          const data = (await res.json().catch(() => ({}))) as {
+            status?: string;
+            error?: string;
+            ringkasan?: RingkasanRoute | null;
+          };
+          const st = typeof data.status === "string" ? data.status : "galat";
+          status = st;
+          const r = data.ringkasan;
+          setKemajuan((m) => {
+            const k = m[t.id] ?? KEMAJUAN_AWAL;
+            return {
+              ...m,
+              [t.id]: {
+                status: st,
+                putaran: ke,
+                potongan: k.potongan + (r?.potongan_selesai ?? 0),
+                sisa: r?.potongan_sisa ?? k.sisa,
+                disimpan: k.disimpan + (r?.disimpan ?? 0),
+                dilewati: k.dilewati + (r?.dilewati_sama ?? 0),
+                titik: r?.titik ?? k.titik,
+                galat: r?.galat ?? (res.ok ? undefined : (data.error ?? `HTTP ${res.status}`)),
+              },
             };
-            status = typeof data.status === "string" ? data.status : "galat";
-            const r = data.ringkasan;
-            perbarui(t.id, (k) => ({
-              status: status as string,
-              putaran,
-              potongan: k.potongan + (r?.potongan_selesai ?? 0),
-              sisa: r?.potongan_sisa ?? k.sisa,
-              disimpan: k.disimpan + (r?.disimpan ?? 0),
-              dilewati: k.dilewati + (r?.dilewati_sama ?? 0),
-              titik: r?.titik ?? k.titik,
-              galat: r?.galat ?? (res.ok ? undefined : (data.error ?? `HTTP ${res.status}`)),
-            }));
-          } catch (err) {
-            status = "galat";
-            perbarui(t.id, (k) => ({ ...k, status: "galat", putaran, galat: (err as Error).message }));
-          }
-        } while (lanjutPutaran(status, putaran, berhenti.current));
-        if (berhenti.current) break;
+          });
+        } catch (err) {
+          status = "galat";
+          const pesan = (err as Error).message;
+          setKemajuan((m) => ({ ...m, [t.id]: { ...(m[t.id] ?? KEMAJUAN_AWAL), status: "galat", putaran: ke, galat: pesan } }));
+        }
+      } while (lanjutPutaran(status, putaran, berhenti.current));
+      if (berhenti.current) {
+        setKemajuan((m) => ({ ...m, [t.id]: { ...(m[t.id] ?? KEMAJUAN_AWAL), status: "dihentikan" } }));
       }
     } finally {
-      setJalan(false);
+      setJalan(null);
       setMuatUlang((n) => n + 1);
     }
   };
@@ -222,8 +226,6 @@ export default function TokoTerhubung() {
     };
   }, [hasil, muatUlang]);
 
-  const adaYangDisinkron = (daftar ?? []).some(ikutSinkron);
-
   return (
     <div className="mb-5 rounded-[18px] border border-line bg-white p-5 shadow-[0_8px_30px_rgb(15_23_42/0.04)] max-mini:p-4">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2.5">
@@ -231,26 +233,15 @@ export default function TokoTerhubung() {
           <div className="text-[0.95rem] font-bold">Toko Terhubung</div>
           {modeOtomatis !== null && (
             <div className="mt-0.5 text-[0.78rem] text-muted">
-              Sinkron pesanan:{" "}
+              Sinkron otomatis:{" "}
               <b className={modeOtomatis ? "text-green-dark" : "text-text-2"}>
-                {modeOtomatis ? "otomatis tiap 15 menit" : "manual"}
+                {modeOtomatis ? "nyala, tiap 15 menit" : "mati (manual)"}
               </b>{" "}
-              · diubah lewat SQL
+              · diubah lewat SQL. Tombol Sinkronkan di tiap toko selalu bisa dipakai.
             </div>
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {isAdmin && !jalan && (
-            <button
-              type="button"
-              onClick={sinkronSekarang}
-              disabled={!adaYangDisinkron}
-              title={adaYangDisinkron ? undefined : "Tidak ada toko dengan sinkron pesanan aktif"}
-              className="min-h-10 cursor-pointer rounded-[9px] border border-line bg-white px-3.5 py-1.5 text-[0.84rem] font-bold text-text-2 transition hover:bg-green-soft disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Sinkronkan sekarang
-            </button>
-          )}
           {isAdmin && jalan && (
             <button
               type="button"
@@ -273,13 +264,9 @@ export default function TokoTerhubung() {
 
       {jalan && (
         <p role="status" className="mb-4 rounded-xl border border-line bg-green-soft px-3.5 py-2.5 text-[0.82rem] text-text-2">
-          Menyinkronkan per toko, dicicil per jam. Biarkan halaman ini terbuka; tekan Berhenti kapan saja — yang
-          sudah tersimpan tidak hilang dan bisa dilanjutkan nanti. Paling banyak {MAKS_PUTARAN_TOMBOL} putaran per toko.
-        </p>
-      )}
-      {galatSinkron && (
-        <p role="alert" className="mb-4 rounded-xl border border-[#fecaca] bg-[#fef2f2] px-3.5 py-2.5 text-[0.86rem] text-[#b91c1c]">
-          {galatSinkron}
+          Menyinkronkan, dicicil per jam. Biarkan halaman ini terbuka; tekan Berhenti kapan saja — yang sudah
+          tersimpan tidak hilang dan bisa dilanjutkan dengan menekan Sinkronkan lagi. Paling banyak{" "}
+          {MAKS_PUTARAN_TOMBOL} putaran per klik.
         </p>
       )}
 
@@ -288,8 +275,8 @@ export default function TokoTerhubung() {
           role="status"
           className="mb-4 rounded-xl border border-line bg-green-soft px-3.5 py-2.5 text-[0.86rem] text-green-dark"
         >
-          Toko <b>{hasil.toko}</b> berhasil dihubungkan. Toko yang BARU terhubung tidak disinkronkan pesanannya
-          sampai sinkronnya dinyalakan lewat SQL — lihat baris &quot;Sinkron pesanan&quot; di kartunya.
+          Toko <b>{hasil.toko}</b> berhasil dihubungkan. Pesanannya belum ditarik — tekan <b>Sinkronkan</b> di
+          kartu toko kapan pun Anda siap.
           {hasil.catatan === "nama_toko_belum" && " Nama tokonya belum terbaca."}
         </p>
       )}
@@ -354,12 +341,12 @@ export default function TokoTerhubung() {
                             </span>
                           )}
                         </dd>
-                        <dt className="text-muted">Sinkron pesanan</dt>
+                        <dt className="text-muted">Ikut sinkron otomatis</dt>
                         <dd className="m-0">
-                          {t.sinkron_pesanan ? (
-                            <b className="text-green-dark">aktif</b>
+                          {t.ikut_sinkron_otomatis ? (
+                            <b className="text-green-dark">ya</b>
                           ) : (
-                            <span className="text-muted">nonaktif — tidak disinkronkan</span>
+                            <span className="text-muted">tidak — hanya lewat tombol</span>
                           )}
                         </dd>
                         <dt className="text-muted">Pesanan tersinkron</dt>
@@ -389,11 +376,24 @@ export default function TokoTerhubung() {
                     </p>
                   )}
                 </div>
-                <span
-                  className={`shrink-0 text-[0.82rem] font-bold ${t.is_active ? "text-green-dark" : "text-[#d97706]"}`}
-                >
-                  ● {t.is_active ? "Aktif" : "Perlu otorisasi ulang"}
-                </span>
+                <div className="flex shrink-0 flex-col items-end gap-2 max-mini:w-full max-mini:items-stretch">
+                  <span
+                    className={`text-[0.82rem] font-bold ${t.is_active ? "text-green-dark" : "text-[#d97706]"}`}
+                  >
+                    ● {t.is_active ? "Aktif" : "Perlu otorisasi ulang"}
+                  </span>
+                  {isAdmin && bisaDisinkron(t) && (
+                    <button
+                      type="button"
+                      onClick={() => void sinkronToko(t)}
+                      disabled={jalan !== null}
+                      title={jalan && jalan !== t.id ? "Tunggu toko lain selesai disinkronkan" : undefined}
+                      className="min-h-10 cursor-pointer rounded-[9px] border border-line bg-white px-3.5 py-1.5 text-[0.84rem] font-bold text-text-2 transition hover:bg-green-soft disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {jalan === t.id ? "Menyinkronkan…" : "↻ Sinkronkan"}
+                    </button>
+                  )}
+                </div>
               </li>
             );
           })}

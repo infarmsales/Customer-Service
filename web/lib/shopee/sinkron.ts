@@ -5,7 +5,7 @@ import "server-only";
 
    Dipanggil oleh /api/sync/shopee-orders?toko=<uuid> — dari job pg_cron
    (satu panggilan per toko, hanya bila mode otomatis) atau dari tombol
-   "Sinkronkan sekarang" di Pengaturan (berulang selama "belum_selesai").
+   "Sinkronkan" di Pengaturan (berulang selama "belum_selesai").
 
    KENAPA DICICIL (perbaikan-sinkron-skala-besar, 12 Nov 2026)
 
@@ -21,10 +21,13 @@ import "server-only";
    yang sudah tercatat. Aturannya murni di sinkronAturan.ts dan diuji
    oleh scripts/uji-shopee-sinkron.mjs.
 
-   DUA SAKELAR — keduanya diperiksa DI SINI, di server, sebelum Shopee
-   disentuh. Menyembunyikan tombol bukan pengaman.
-     1. marketplace_shops.sinkron_pesanan   per toko, bawaan false
-     2. settings.sinkron_pesanan_otomatis   mode jadwal, hanya untuk cron
+   SIAPA BOLEH MENARIK — diperiksa DI SINI, di server, sebelum Shopee
+   disentuh (keputusanSinkron() di sinkronAturan.ts):
+     - tombol admin: SELALU, untuk toko mana pun. Kapan menyinkronkan
+       adalah keputusan admin.
+     - cron: hanya bila kedua sakelar nyala —
+         1. marketplace_shops.ikut_sinkron_otomatis   per toko, bawaan false
+         2. settings.sinkron_pesanan_otomatis         mode jadwal
 
    SATU PROSES PER TOKO: kunci sinkron_kunci_sampai mencegah cron dan
    tombol menarik toko yang sama bersamaan. Kunci milik fungsi yang mati
@@ -57,7 +60,7 @@ export type StatusSinkronToko =
   | "selesai"
   | "belum_selesai"
   | "galat"
-  | "dilewati_toko_nonaktif"
+  | "dilewati_tidak_ikut_otomatis"
   | "dilewati_mode_manual"
   | "dilewati_perlu_otorisasi"
   | "dilewati_sedang_berjalan"
@@ -324,8 +327,8 @@ export async function sinkronkanToko(
 
   const keputusan = keputusanSinkron({
     pemicu,
-    sinkronPesanan: t.sinkron_pesanan,
-    /* Mode jadwal hanya dibaca untuk cron; tombol admin tidak melihatnya. */
+    ikutOtomatis: t.ikut_sinkron_otomatis,
+    /* Sakelar hanya berlaku untuk cron; tombol admin tidak melihatnya. */
     modeOtomatis: pemicu === "cron" ? await bacaModeOtomatis() : null,
   });
   if (keputusan !== "jalan") return { status: keputusan, ringkasan: ringkasanKosong(t, keputusan, mulaiMs) };

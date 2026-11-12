@@ -34,7 +34,7 @@ type TokoDariApi = {
   external_shop_id: string;
   shop_name: string | null;
   is_active: boolean;
-  sinkron_pesanan?: unknown;
+  orders_synced_until?: string | null;
 };
 
 async function bacaToko(): Promise<TokoRingkas[]> {
@@ -47,9 +47,8 @@ async function bacaToko(): Promise<TokoRingkas[]> {
       nama: t.shop_name ?? `Toko ${t.external_shop_id}`,
       platform: t.platform,
       aktif: t.is_active,
-      /* Hanya true yang berarti disinkronkan; kolom yang belum ada
-         (migrasi belum jalan) = tidak. */
-      sinkron: t.sinkron_pesanan === true,
+      /* Pernah disinkronkan = titik sinkronnya sudah terisi. */
+      sinkron: typeof t.orders_synced_until === "string" && t.orders_synced_until !== "",
     }));
   } catch {
     return [];

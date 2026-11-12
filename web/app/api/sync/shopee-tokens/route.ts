@@ -4,8 +4,8 @@
 
    TIDAK TERPENGARUH KEDUA SAKELAR SINKRON PESANAN
 
-   Toko dengan sinkron_pesanan = false (toko besar yang terhubung tapi
-   belum boleh ditarik pesanannya) dan mode jadwal manual TETAP diproses
+   Toko dengan ikut_sinkron_otomatis = false (mis. toko besar yang hanya
+   disinkronkan lewat tombol) dan mode jadwal manual TETAP diproses
    di sini. refresh_token berumur 30 hari dan hanya diperpanjang saat
    DIPAKAI; kalau rute ini ikut dimatikan, toko harus diotorisasi ulang
    (dengan OTP akun utama) sebulan kemudian.
