@@ -14,6 +14,7 @@ import { getSupabaseSebagai, tokenDariHeader } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { GalatKonfigurasiAdmin } from "@/lib/supabase/admin";
 import { GalatToko, daftarToko } from "@/lib/shopee/token";
+import { bacaModeOtomatis } from "@/lib/shopee/sinkron";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,7 +30,9 @@ export async function GET(req: Request) {
   }
 
   try {
-    return NextResponse.json({ toko: await daftarToko() });
+    const [toko, mode] = await Promise.all([daftarToko(), bacaModeOtomatis()]);
+    /* Hanya label: true = otomatis tiap 15 menit; apa pun selain true = manual. */
+    return NextResponse.json({ toko, modeOtomatis: mode === true });
   } catch (err) {
     if (err instanceof GalatKonfigurasiAdmin) {
       return NextResponse.json({ error: err.message }, { status: 503 });

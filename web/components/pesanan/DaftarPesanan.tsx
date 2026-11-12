@@ -27,6 +27,7 @@ import {
   ringkasBarang,
   saringPesanan,
   saringTanpaStatus,
+  tokoBelumDisinkron,
   type Saringan,
 } from "@/lib/daftarPesanan";
 import { useDaftarPesanan } from "@/lib/db/useDaftarPesanan";
@@ -54,6 +55,7 @@ export default function DaftarPesanan() {
   const chip = useMemo(() => chipStatus(dasar), [dasar]);
   const baris = useMemo(() => saringPesanan(daftar, s), [daftar, s]);
   const opsiToko = useMemo(() => pilihanToko(daftar, toko), [daftar, toko]);
+  const belumSinkron = tokoBelumDisinkron(s.toko, toko);
   /* Dihitung sekali per muat, bukan per render — cukup untuk penanda "terlambat". */
   const sekarang = useMemo(() => (dimuatPada ? Date.parse(dimuatPada) : 0), [dimuatPada]);
 
@@ -142,7 +144,15 @@ export default function DaftarPesanan() {
         </Kotak>
       )}
 
-      {keadaan === "siap" && daftar.length > 0 && baris.length === 0 && (
+      {keadaan === "siap" && belumSinkron && (
+        <Kotak>
+          <b>{belumSinkron.nama}</b> terhubung, tetapi pesanannya <b>belum disinkronkan</b> ke console. Daftar
+          yang kosong atau sedikit di sini BUKAN berarti toko ini tidak punya pesanan — cek di Seller Center.
+          Sinkron toko ini dinyalakan lewat SQL (supabase/nyalakan-sinkron-toko.sql).
+        </Kotak>
+      )}
+
+      {keadaan === "siap" && daftar.length > 0 && baris.length === 0 && !belumSinkron && (
         <Kotak>
           Tidak ada pesanan yang cocok dengan saringan ini di {daftar.length} pesanan terbaru yang dimuat.
           {terpotong ? " Pesanan yang lebih lama tidak ikut dimuat." : ""}

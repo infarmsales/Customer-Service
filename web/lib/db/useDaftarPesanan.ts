@@ -28,7 +28,14 @@ const KOLOM =
   "id, platform, shop_id, external_order_id, status, raw_status, buyer_username, total_amount, currency, " +
   "shipping_carrier, tracking_number, items, ship_by_date, order_created_at, order_updated_at, synced_at";
 
-type TokoDariApi = { id: string; platform: string; external_shop_id: string; shop_name: string | null; is_active: boolean };
+type TokoDariApi = {
+  id: string;
+  platform: string;
+  external_shop_id: string;
+  shop_name: string | null;
+  is_active: boolean;
+  sinkron_pesanan?: unknown;
+};
 
 async function bacaToko(): Promise<TokoRingkas[]> {
   try {
@@ -40,6 +47,9 @@ async function bacaToko(): Promise<TokoRingkas[]> {
       nama: t.shop_name ?? `Toko ${t.external_shop_id}`,
       platform: t.platform,
       aktif: t.is_active,
+      /* Hanya true yang berarti disinkronkan; kolom yang belum ada
+         (migrasi belum jalan) = tidak. */
+      sinkron: t.sinkron_pesanan === true,
     }));
   } catch {
     return [];

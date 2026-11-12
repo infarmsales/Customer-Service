@@ -34,7 +34,25 @@ export type BarisPesanan = PesananPembeli & {
   synced_at: string | null;
 };
 
-export type TokoRingkas = { id: string; nama: string; platform: string; aktif: boolean };
+export type TokoRingkas = {
+  id: string;
+  nama: string;
+  platform: string;
+  aktif: boolean;
+  /** marketplace_shops.sinkron_pesanan. false = toko terhubung tapi pesanannya tidak ditarik. */
+  sinkron: boolean;
+};
+
+/**
+ * Toko yang dipilih di saringan tapi pesanannya TIDAK disinkronkan
+ * (mis. toko besar yang baru diotorisasi). Daftar kosong untuk toko
+ * ini tidak boleh terbaca sebagai "tidak ada pesanan".
+ */
+export function tokoBelumDisinkron(pilihan: string, toko: readonly TokoRingkas[]): TokoRingkas | null {
+  if (pilihan === "semua") return null;
+  const t = toko.find((x) => x.id === pilihan);
+  return t && !t.sinkron ? t : null;
+}
 
 export type Saringan = {
   /** "semua" atau uuid baris marketplace_shops. */
@@ -139,7 +157,13 @@ export function pilihanToko(
   const tanpaNama = [...punya].filter((id) => !toko.some((t) => t.id === id));
   return [
     { value: "semua", label: "Semua toko" },
-    ...terpakai.map((t) => ({ value: t.id, label: `${t.nama} · ${t.platform}${t.aktif ? "" : " (nonaktif)"}` })),
+    ...terpakai.map((t) => ({
+      value: t.id,
+      label:
+        `${t.nama} · ${t.platform}` +
+        (t.aktif ? "" : " (nonaktif)") +
+        (t.sinkron ? "" : " — pesanan belum disinkronkan"),
+    })),
     ...tanpaNama.map((id) => ({ value: id, label: "Toko tidak dikenal" })),
   ];
 }
