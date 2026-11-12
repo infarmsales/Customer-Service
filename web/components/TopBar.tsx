@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import SaklarAI from "./SaklarAI";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useToast } from "./Toast";
 import { useAuth } from "@/lib/auth";
@@ -75,6 +75,8 @@ function MassModal({
   onClose: () => void;
 }) {
   const toast = useToast();
+  const router = useRouter();
+  const pathname = usePathname();
   const [raw, setRaw] = useState("");
   /* Lingkup "semua" mencari nomor pesanan MAUPUN resi, jadi
      judulnya tidak boleh memilih salah satu. Sebelum lingkup itu
@@ -100,7 +102,20 @@ function MassModal({
        Daftarnya disimpan di papan, bukan hanya di search.terms,
        supaya bertahan setelah halaman dimuat ulang. */
     mulaiCroscek(terms, terms.map(kunciCroscek));
-    toast(`${terms.length} nomor dicari — papan croscek dibuka 📋`);
+
+    /* Papan croscek hanya dipasang di halaman Chat: ia mencocokkan
+       nomor ke PERCAKAPAN, dan klik barisnya membuka percakapan itu.
+       Dari halaman lain (Pesanan, Beranda, …) pencarian massal dulu
+       hanya menampilkan pesan "papan dibuka" tanpa papan apa pun —
+       bug 12 Nov 2026. Sekarang pindah ke Chat; daftarnya sudah
+       tersimpan di lib/croscek.ts, jadi papannya langsung tampil di sana. */
+    const diChat = pathname === "/chat" || pathname.startsWith("/chat/");
+    if (!diChat) router.push("/chat");
+    toast(
+      diChat
+        ? `${terms.length} nomor dicari — papan croscek dibuka 📋`
+        : `${terms.length} nomor dicari — pindah ke Chat, papan croscek dibuka 📋`,
+    );
     onClose();
   };
 
