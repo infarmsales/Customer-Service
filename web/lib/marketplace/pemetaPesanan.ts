@@ -35,6 +35,23 @@ export const PETA_STATUS_SHOPEE: Readonly<Record<string, StatusInternal>> = {
   IN_CANCEL: "proses_batal",
   CANCELLED: "dibatalkan",
   INVOICE_PENDING: "menunggu_invoice",
+  /* Tiga nilai di bawah tidak ada di daftar parameter order_status
+     get_order_list (yang dipakai saat peta ini pertama ditulis), tetapi
+     MUNCUL di jawaban get_order_detail toko asli (12 Nov 2026: 35 dari
+     214 pesanan infarmjakarta jatuh ke 'lainnya'). Dipetakan dari arti
+     namanya; nilai aslinya tetap tersimpan di raw_status.
+     - TO_CONFIRM_RECEIVE: paket sudah dikirim, menunggu pembeli
+       mengonfirmasi diterima. Belum 'selesai' — pembeli masih bisa
+       mengajukan komplain — jadi diberi status sendiri.
+     - RETRY_SHIP: pengiriman perlu diatur ulang oleh penjual.
+     - TO_RETURN: pembeli mengajukan pengembalian. Bukan pembatalan,
+       dan justru kasus yang paling perlu dilihat CS, jadi tidak
+       digabung ke 'lainnya' maupun 'dibatalkan'.
+     PENDING sengaja TIDAK dipetakan: artinya tidak jelas, dan menebak
+     lebih buruk daripada 'lainnya' yang jujur. */
+  TO_CONFIRM_RECEIVE: "menunggu_konfirmasi",
+  RETRY_SHIP: "perlu_dikirim",
+  TO_RETURN: "pengembalian",
 };
 
 export function petakanStatusShopee(

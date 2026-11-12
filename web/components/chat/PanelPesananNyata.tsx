@@ -20,10 +20,12 @@ const WARNA_STATUS: Record<string, string> = {
   perlu_dikirim: "bg-[#dbeafe] text-[#1e40af]",
   diproses: "bg-[#e0e7ff] text-[#3730a3]",
   dalam_pengiriman: "bg-green-mint text-green-dark",
+  menunggu_konfirmasi: "bg-green-mint text-green-dark",
   selesai: "bg-green-mint text-green-dark",
   proses_batal: "bg-[#fee2e2] text-[#991b1b]",
   dibatalkan: "bg-[#f1f5f9] text-[#475569]",
   menunggu_invoice: "bg-[#fef3c7] text-[#92400e]",
+  pengembalian: "bg-[#fee2e2] text-[#991b1b]",
   lainnya: "bg-[#f1f5f9] text-[#475569]",
 };
 

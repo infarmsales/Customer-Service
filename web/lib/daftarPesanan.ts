@@ -11,21 +11,25 @@
    toko baru diotorisasi, inilah bukti yang terlihat bahwa pesanannya
    benar-benar masuk.
 
-   KENAPA PENYARINGAN DI SINI, BUKAN DI KUERI
+   PAGINASI DI DATABASE (12 Nov 2026)
 
-   Hitungan per status di chip harus tetap menunjukkan seluruh
-   pesanan toko yang dipilih, bukan hanya status yang sedang aktif.
-   Dengan satu kueri lalu saring di peramban, chip dan tabel selalu
-   sepakat. Batasnya BATAS_BARIS baris terbaru; kalau tercapai, layar
-   mengatakannya, supaya "tidak ketemu" tidak terbaca sebagai jawaban.
+   Sebelumnya 500 pesanan terbaru dimuat sekaligus lalu disaring di
+   peramban. Dua masalahnya: 500 baris yang tampil terbaca sebagai
+   "baru 500 pesanan tersinkron" (isinya 9.005), dan saringan toko /
+   status / pencarian diam-diam hanya mencari di 500 itu.
+
+   Sekarang setiap halaman meminta PER_HALAMAN baris saja, dan
+   saringannya dijalankan database — jadi mencakup SELURUH pesanan.
+   Angka chip status dihitung database juga, dengan saringan toko +
+   pencarian yang sama, supaya chip dan tabel tetap sepakat.
    =========================================================== */
 
 import { normalkan } from "./cocok.ts";
 import { SEMUA_STATUS_INTERNAL, LABEL_STATUS } from "./marketplace/tipe.ts";
 import type { PesananPembeli } from "./pesananPembeli.ts";
 
-/** Berapa pesanan terbaru yang dimuat sekali buka. */
-export const BATAS_BARIS = 500;
+/** Baris per halaman tabel. */
+export const PER_HALAMAN = 50;
 
 export type BarisPesanan = PesananPembeli & {
   platform: string;
@@ -64,49 +68,97 @@ export type Saringan = {
 
 export const SARINGAN_AWAL: Saringan = { toko: "semua", status: "semua", cari: "" };
 
-function cocokCari(p: BarisPesanan, cari: string): boolean {
-  const k = cari.trim();
-  if (k === "") return true;
-  const nk = normalkan(k);
-  /* Nomor pesanan & resi: dibandingkan tanpa tanda baca, supaya
-     "2410 15ABC-DEF" tetap menemukan 241015ABCDEF. Nama akun &
-     produk: cukup memuat teksnya. */
-  const nomor = [p.external_order_id, p.tracking_number ?? ""];
-  if (nk.length > 0 && nomor.some((n) => normalkan(n).includes(nk))) return true;
-  const kecil = k.toLowerCase();
-  if ((p.buyer_username ?? "").toLowerCase().includes(kecil)) return true;
-  return (p.items ?? []).some((i) => (i?.nama ?? "").toLowerCase().includes(kecil));
+/**
+ * Pola pencarian untuk kolom orders.cari_teks.
+ *
+ * Kolom itu berisi nomor pesanan, resi, akun pembeli, dan nama
+ * produk — huruf kecil, TANPA spasi dan tanda baca (lihat migrasi
+ * 20261112130000). Kata kunci dinormalkan dengan cara yang sama,
+ * jadi "2410 15abc-def" tetap menemukan 241015ABCDEF dan "sari, keb"
+ * menemukan akun "Sari, Kebun".
+ *
+ * Hasilnya hanya [a-z0-9]: tidak ada koma, titik, kurung, % atau _
+ * yang bisa merusak filter PostgREST atau menjadi wildcard ILIKE.
+ *
+ * @returns null  = tidak menyaring (kotak kosong / spasi saja)
+ *          ""    = TIDAK ADA yang cocok (kata kunci hanya tanda baca —
+ *                  bukan "cocok dengan semua")
+ *          teks  = pola untuk ilike '%teks%'
+ */
+export function kunciCari(cari: string): string | null {
+  if (cari.trim() === "") return null;
+  return normalkan(cari);
 }
 
-/** Baris yang lolos saringan toko + cari (TANPA status) — dasar hitungan chip. */
-export function saringTanpaStatus(daftar: readonly BarisPesanan[], s: Saringan): BarisPesanan[] {
-  return daftar.filter((p) => (s.toko === "semua" || p.shop_id === s.toko) && cocokCari(p, s.cari));
+/** Halaman yang sah: bilangan bulat >= 1, dan tidak melewati halaman terakhir bila total diketahui. */
+export function halamanAman(halaman: number, total: number | null = null, per: number = PER_HALAMAN): number {
+  const h = Number.isFinite(halaman) ? Math.max(1, Math.floor(halaman)) : 1;
+  if (total === null || !Number.isFinite(total) || total < 0) return h;
+  return Math.min(h, jumlahHalaman(total, per));
 }
 
-/** Baris yang ditampilkan di tabel. */
-export function saringPesanan(daftar: readonly BarisPesanan[], s: Saringan): BarisPesanan[] {
-  return saringTanpaStatus(daftar, s).filter((p) => s.status === "semua" || p.status === s.status);
+/** Banyak halaman; minimal 1 supaya "Halaman 1 dari 0" tidak pernah muncul. */
+export function jumlahHalaman(total: number, per: number = PER_HALAMAN): number {
+  if (!Number.isFinite(total) || total <= 0 || per <= 0) return 1;
+  return Math.ceil(total / per);
+}
+
+/** Rentang indeks untuk .range(dari, sampai) — keduanya inklusif, mulai 0. */
+export function rentangHalaman(halaman: number, per: number = PER_HALAMAN): { dari: number; sampai: number } {
+  const h = halamanAman(halaman);
+  return { dari: (h - 1) * per, sampai: h * per - 1 };
+}
+
+/** "Menampilkan 51–100 dari 9.005 pesanan" — null bila kosong. */
+export function teksRentang(halaman: number, jumlahBaris: number, total: number | null, per: number = PER_HALAMAN): string | null {
+  if (jumlahBaris <= 0) return null;
+  const dari = (halamanAman(halaman) - 1) * per + 1;
+  const sampai = dari + jumlahBaris - 1;
+  const dariTotal = total !== null && Number.isFinite(total) && total >= sampai ? ` dari ${angka(total)}` : "";
+  return `Menampilkan ${angka(dari)}–${angka(sampai)}${dariTotal} pesanan`;
 }
 
 /**
- * Chip status: "Semua" + setiap status yang PUNYA pesanan, urut
- * kosakata internal. Status asing (tidak ada di kosakata) tetap
- * mendapat chip sendiri di belakang — tidak boleh ada pesanan yang
- * tidak bisa dijangkau lewat chip mana pun.
+ * Nomor halaman untuk tombol: selalu halaman pertama, terakhir, dan
+ * dua di kiri-kanan halaman aktif; celah diganti "…".
+ * Contoh (5 dari 181): [1, "…", 3, 4, 5, 6, 7, "…", 181]
  */
-export function chipStatus(daftar: readonly BarisPesanan[]): { value: string; label: string; count: number }[] {
-  const hitung = new Map<string, number>();
-  for (const p of daftar) hitung.set(p.status, (hitung.get(p.status) ?? 0) + 1);
-  const dikenal = SEMUA_STATUS_INTERNAL.filter((s) => hitung.has(s)).map((s) => ({
+export function nomorHalaman(aktif: number, total: number): (number | "…")[] {
+  const n = Math.max(1, Math.floor(total));
+  const a = Math.min(Math.max(1, Math.floor(aktif)), n);
+  const pilih = new Set<number>([1, n]);
+  for (let i = a - 2; i <= a + 2; i++) if (i >= 1 && i <= n) pilih.add(i);
+  const urut = [...pilih].sort((x, y) => x - y);
+  const hasil: (number | "…")[] = [];
+  for (let i = 0; i < urut.length; i++) {
+    if (i > 0 && urut[i] - urut[i - 1] > 1) hasil.push("…");
+    hasil.push(urut[i]);
+  }
+  return hasil;
+}
+
+/**
+ * Chip status dari hitungan database: "Semua" + setiap status yang
+ * PUNYA pesanan, urut kosakata internal. Status yang sedang dipilih
+ * tetap tampil walau nol — kalau hilang, tidak ada cara melihat chip
+ * mana yang menyala.
+ */
+export function chipDariHitungan(
+  hitung: Readonly<Record<string, number>>,
+  total: number,
+  aktif: string = "semua",
+): { value: string; label: string; count: number }[] {
+  const dikenal = SEMUA_STATUS_INTERNAL.filter((s) => (hitung[s] ?? 0) > 0 || s === aktif).map((s) => ({
     value: s as string,
     label: LABEL_STATUS[s],
-    count: hitung.get(s) ?? 0,
+    count: hitung[s] ?? 0,
   }));
-  const asing = [...hitung.keys()]
-    .filter((s) => !(SEMUA_STATUS_INTERNAL as readonly string[]).includes(s))
-    .sort()
-    .map((s) => ({ value: s, label: s, count: hitung.get(s) ?? 0 }));
-  return [{ value: "semua", label: "Semua", count: daftar.length }, ...dikenal, ...asing];
+  return [{ value: "semua", label: "Semua", count: total }, ...dikenal];
+}
+
+/** 9005 -> "9.005" (pemisah ribuan Indonesia, tanpa bergantung locale mesin). */
+export function angka(n: number): string {
+  return String(Math.trunc(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
 /** Jenis Pill untuk sebuah status. */
@@ -118,6 +170,7 @@ export function jenisPill(status: string): string {
     case "proses_batal":
       return "cancel";
     case "dalam_pengiriman":
+    case "menunggu_konfirmasi":
     case "diproses":
       return "cont";
     case "perlu_dikirim":

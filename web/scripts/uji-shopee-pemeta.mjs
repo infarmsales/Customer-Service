@@ -65,6 +65,26 @@ console.log("\nPeta status — dari dokumentasi get_order_list");
     INVOICE_PENDING: "menunggu_invoice",
   };
   for (const [k, v] of Object.entries(harap)) uji(`${k} -> ${v}`, petakanStatusShopee(k).status, v);
+  /* Tambahan 12 Nov 2026 — muncul di get_order_detail toko asli. */
+  uji("TO_CONFIRM_RECEIVE -> menunggu_konfirmasi (BUKAN selesai)", petakanStatusShopee("TO_CONFIRM_RECEIVE").status, "menunggu_konfirmasi");
+  uji("RETRY_SHIP -> perlu_dikirim", petakanStatusShopee("RETRY_SHIP").status, "perlu_dikirim");
+  uji("TO_RETURN -> pengembalian (BUKAN dibatalkan/lainnya)", petakanStatusShopee("TO_RETURN").status, "pengembalian");
+  uji("TO_RETURN tetap menyimpan aslinya", petakanStatusShopee("TO_RETURN").raw_status, "TO_RETURN");
+  {
+    /* CHECK di migrasi terbaru harus memuat PERSIS kosakata internal —
+       kalau tidak, upsert ditolak database dan sinkron gagal diam-diam. */
+    const fs = await import("node:fs");
+    const sql = fs.readFileSync(new URL("../../supabase/migrations/20261112130000_status_shopee_tambahan.sql", import.meta.url), "utf8");
+    const blok = sql.match(/add constraint orders_status_check check \(status in \(([\s\S]*?)\)\)/);
+    const diSql = blok ? [...blok[1].matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort() : [];
+    uji("CHECK migrasi = SEMUA_STATUS_INTERNAL", diSql, [...SEMUA_STATUS_INTERNAL].sort());
+    const diUpdate = [...sql.matchAll(/when '([A-Z_]+)'\s+then '([a-z_]+)'/g)].map((m) => [m[1], m[2]]);
+    uji(
+      "perbaikan data lama di migrasi = peta di kode",
+      diUpdate.every(([shopee, internal]) => PETA_STATUS_SHOPEE[shopee] === internal) && diUpdate.length === 3,
+      true,
+    );
+  }
   uji("aslinya tersimpan di raw_status", petakanStatusShopee("SHIPPED").raw_status, "SHIPPED");
   uji("status asing -> lainnya", petakanStatusShopee("PENDING").status, "lainnya");
   uji("status asing tetap menyimpan aslinya", petakanStatusShopee("PENDING").raw_status, "PENDING");
