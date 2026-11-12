@@ -13,24 +13,28 @@
    jaringan); berkas ini hanya menyusun tampilannya.
    =========================================================== */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pill, TableWrap, Td, Th } from "@/components/ui/Bits";
 import { stempel } from "@/lib/format";
 import { labelStatus, teksJumlah, terlambatKirim } from "@/lib/pesananPembeli";
 import {
-  BATAS_BARIS,
   SARINGAN_AWAL,
-  chipStatus,
+  chipDariHitungan,
+  halamanAman,
   jenisPill,
+  jumlahHalaman,
   namaToko,
+  nomorHalaman,
   pilihanToko,
   ringkasBarang,
-  saringPesanan,
-  saringTanpaStatus,
+  teksRentang,
   tokoBelumDisinkron,
   type Saringan,
 } from "@/lib/daftarPesanan";
 import { useDaftarPesanan } from "@/lib/db/useDaftarPesanan";
+
+/** Jeda mengetik sebelum pencarian dikirim ke database. */
+const JEDA_CARI_MS = 350;
 
 function Kotak({ children, nada = "netral" }: { children: React.ReactNode; nada?: "netral" | "galat" }) {
   return (
@@ -47,14 +51,62 @@ function Kotak({ children, nada = "netral" }: { children: React.ReactNode; nada?
   );
 }
 
-export default function DaftarPesanan() {
-  const { keadaan, daftar, toko, galat, terpotong, dimuatPada, muatUlang } = useDaftarPesanan();
-  const [s, setS] = useState<Saringan>(SARINGAN_AWAL);
+function TombolHalaman({
+  children,
+  onClick,
+  label,
+  aktif = false,
+  disabled = false,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  label: string;
+  aktif?: boolean;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      aria-current={aktif ? "page" : undefined}
+      className={[
+        "grid min-h-10 min-w-10 cursor-pointer place-items-center rounded-xl border px-2.5 text-[0.84rem] font-semibold transition disabled:cursor-not-allowed disabled:opacity-40",
+        aktif ? "border-green bg-green-mint text-green-dark" : "border-line bg-white text-text-2 hover:bg-green-soft",
+      ].join(" ")}
+    >
+      {children}
+    </button>
+  );
+}
 
-  const dasar = useMemo(() => saringTanpaStatus(daftar, s), [daftar, s]);
-  const chip = useMemo(() => chipStatus(dasar), [dasar]);
-  const baris = useMemo(() => saringPesanan(daftar, s), [daftar, s]);
+export default function DaftarPesanan() {
+  /* `ketik` = isi kotak cari saat ini; `s.cari` = yang sudah dikirim ke
+     database (setelah jeda). Memisahkan keduanya mencegah satu kueri
+     per huruf. */
+  const [s, setS] = useState<Saringan>(SARINGAN_AWAL);
+  const [ketik, setKetik] = useState("");
+  const [halaman, setHalaman] = useState(1);
+
+  useEffect(() => {
+    if (ketik === s.cari) return;
+    const t = setTimeout(() => {
+      setS((x) => ({ ...x, cari: ketik }));
+      setHalaman(1);
+    }, JEDA_CARI_MS);
+    return () => clearTimeout(t);
+  }, [ketik, s.cari]);
+
+  const { keadaan, daftar, toko, galat, totalCocok, hitung, totalSemua, dimuatPada, muatUlang } =
+    useDaftarPesanan(s, halaman);
+
+  const totalHalaman = jumlahHalaman(totalCocok ?? 0);
+  const hal = halamanAman(halaman, totalCocok);
+  const chip = useMemo(() => chipDariHitungan(hitung, totalSemua, s.status), [hitung, totalSemua, s.status]);
   const opsiToko = useMemo(() => pilihanToko(daftar, toko), [daftar, toko]);
+  const adaSaringan = s.toko !== "semua" || s.status !== "semua" || s.cari.trim() !== "";
+  const rentang = teksRentang(hal, daftar.length, totalCocok);
   const belumSinkron = tokoBelumDisinkron(s.toko, toko);
   /* Dihitung sekali per muat, bukan per render — cukup untuk penanda "terlambat". */
   const sekarang = useMemo(() => (dimuatPada ? Date.parse(dimuatPada) : 0), [dimuatPada]);
@@ -92,7 +144,10 @@ export default function DaftarPesanan() {
         <select
           aria-label="Saring toko"
           value={s.toko}
-          onChange={(e) => setS({ ...s, toko: e.target.value, status: "semua" })}
+          onChange={(e) => {
+            setS({ ...s, toko: e.target.value, status: "semua" });
+            setHalaman(1);
+          }}
           className="min-h-10 max-w-full rounded-[9px] border border-line bg-green-soft px-2.5 text-[0.84rem] font-semibold text-text-2"
         >
           {opsiToko.map((o) => (
@@ -107,8 +162,8 @@ export default function DaftarPesanan() {
           </span>
           <input
             type="search"
-            value={s.cari}
-            onChange={(e) => setS({ ...s, cari: e.target.value })}
+            value={ketik}
+            onChange={(e) => setKetik(e.target.value)}
             placeholder="Cari nomor pesanan, resi, pembeli, atau produk"
             className="w-full min-w-0 border-0 bg-transparent text-[0.86rem] outline-none"
           />
@@ -120,7 +175,10 @@ export default function DaftarPesanan() {
           <button
             key={o.value}
             type="button"
-            onClick={() => setS({ ...s, status: o.value })}
+            onClick={() => {
+              setS({ ...s, status: o.value });
+              setHalaman(1);
+            }}
             aria-pressed={o.value === s.status}
             className={[
               "min-h-9 cursor-pointer rounded-3xl border px-3 py-1.5 text-[0.82rem] font-semibold whitespace-nowrap transition",
@@ -137,7 +195,7 @@ export default function DaftarPesanan() {
 
       {keadaan === "galat" && <Kotak nada="galat">Pesanan tidak terbaca: {galat}</Kotak>}
 
-      {keadaan === "siap" && daftar.length === 0 && (
+      {keadaan === "siap" && daftar.length === 0 && !adaSaringan && (
         <Kotak>
           Belum ada pesanan tersimpan. Hubungkan toko di <b>Pengaturan → Toko Terhubung</b>, lalu tekan
           &quot;Sinkronkan&quot;. Sinkronisasi pertama menarik pesanan 1 hari terakhir.
@@ -152,14 +210,11 @@ export default function DaftarPesanan() {
         </Kotak>
       )}
 
-      {keadaan === "siap" && daftar.length > 0 && baris.length === 0 && !belumSinkron && (
-        <Kotak>
-          Tidak ada pesanan yang cocok dengan saringan ini di {daftar.length} pesanan terbaru yang dimuat.
-          {terpotong ? " Pesanan yang lebih lama tidak ikut dimuat." : ""}
-        </Kotak>
+      {keadaan === "siap" && daftar.length === 0 && adaSaringan && !belumSinkron && (
+        <Kotak>Tidak ada pesanan yang cocok dengan saringan ini (dicari di seluruh pesanan tersimpan).</Kotak>
       )}
 
-      {baris.length > 0 && (
+      {daftar.length > 0 && (
         <TableWrap minWidth={1180}>
           <thead>
             <tr>
@@ -175,7 +230,7 @@ export default function DaftarPesanan() {
             </tr>
           </thead>
           <tbody>
-            {baris.map((p) => {
+            {daftar.map((p) => {
               const telat = sekarang > 0 && terlambatKirim(p, sekarang);
               return (
                 <tr key={p.id} className="hover:bg-green-soft/50">
@@ -220,12 +275,38 @@ export default function DaftarPesanan() {
         </TableWrap>
       )}
 
-      {keadaan === "siap" && daftar.length > 0 && (
-        <p className="m-0 text-[0.78rem] text-muted">
-          Menampilkan {baris.length} dari {daftar.length} pesanan terbaru
-          {terpotong ? ` (dibatasi ${BATAS_BARIS} — pesanan lebih lama tidak dimuat)` : ""}
-          {dimuatPada ? ` · dimuat ${stempel(dimuatPada)}` : ""}.
-        </p>
+      {daftar.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2.5">
+          <p className="m-0 text-[0.78rem] text-muted">
+            {rentang}
+            {dimuatPada ? ` · dimuat ${stempel(dimuatPada)}` : ""}
+          </p>
+          {totalHalaman > 1 && (
+            <nav aria-label="Halaman pesanan" className="flex flex-wrap items-center gap-1">
+              <TombolHalaman disabled={hal <= 1} onClick={() => setHalaman(hal - 1)} label="Halaman sebelumnya">
+                ‹
+              </TombolHalaman>
+              {nomorHalaman(hal, totalHalaman).map((n, i) =>
+                n === "…" ? (
+                  <span key={`celah-${i}`} className="px-1 text-muted">
+                    …
+                  </span>
+                ) : (
+                  <TombolHalaman key={n} aktif={n === hal} onClick={() => setHalaman(n)} label={`Halaman ${n}`}>
+                    {n}
+                  </TombolHalaman>
+                ),
+              )}
+              <TombolHalaman
+                disabled={hal >= totalHalaman}
+                onClick={() => setHalaman(hal + 1)}
+                label="Halaman berikutnya"
+              >
+                ›
+              </TombolHalaman>
+            </nav>
+          )}
+        </div>
       )}
     </section>
   );

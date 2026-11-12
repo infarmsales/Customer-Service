@@ -10,16 +10,23 @@
    punya pilihan, dan nomor bertanda baca tetap ketemu.
    =========================================================== */
 
+import fs from "node:fs";
+
 const {
-  saringPesanan,
-  saringTanpaStatus,
-  chipStatus,
+  kunciCari,
+  rentangHalaman,
+  halamanAman,
+  jumlahHalaman,
+  teksRentang,
+  nomorHalaman,
+  chipDariHitungan,
+  angka,
+  PER_HALAMAN,
   jenisPill,
   ringkasBarang,
   namaToko,
   tokoBelumDisinkron,
   pilihanToko,
-  SARINGAN_AWAL,
 } = await import("../lib/daftarPesanan.ts");
 
 let lulus = 0;
@@ -64,43 +71,110 @@ const daftar = [
 ];
 const ids = (r) => r.map((x) => x.id);
 
-console.log("\nSaringan dasar");
-uji("saringan awal = semua baris", ids(saringPesanan(daftar, SARINGAN_AWAL)), ["1", "2", "3", "4", "5"]);
-uji("saring toko B", ids(saringPesanan(daftar, { ...SARINGAN_AWAL, toko: "B" })), ["3", "4"]);
-uji("saring status selesai", ids(saringPesanan(daftar, { ...SARINGAN_AWAL, status: "selesai" })), ["2", "5"]);
-uji("toko + status", ids(saringPesanan(daftar, { toko: "A", status: "selesai", cari: "" })), ["2"]);
+/* ---------- Pencarian di database (kolom orders.cari_teks) ----------
+   Postgres yang menyaring; di sini kolomnya DITIRU persis seperti
+   ekspresi GENERATED di migrasi 20261112130000, lalu dicocokkan dengan
+   ilike '%pola%'. Gunanya: kasus pencarian lama (sebelum paginasi)
+   tetap terbukti menemukan baris yang sama. */
+const cariTeks = (r) =>
+  (
+    (r.external_order_id ?? "") + " " +
+    (r.tracking_number ?? "") + " " +
+    (r.buyer_username ?? "") + " " +
+    JSON.stringify((r.items ?? []).map((i) => i.nama))
+  )
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+const cariDb = (q) => {
+  const pola = kunciCari(q);
+  if (pola === null) return ids(daftar);
+  if (pola === "") return [];
+  return ids(daftar.filter((r) => cariTeks(r).includes(pola)));
+};
 
-console.log("\nPencarian");
-uji("nomor bertanda baca tetap ketemu", ids(saringPesanan(daftar, { ...SARINGAN_AWAL, cari: "2410 15abc-def" })), ["1"]);
-uji("potongan nomor", ids(saringPesanan(daftar, { ...SARINGAN_AWAL, cari: "XYZ" })), ["2"]);
-uji("nomor resi", ids(saringPesanan(daftar, { ...SARINGAN_AWAL, cari: "spxid 0123" })), ["2"]);
-uji("nama pembeli dengan koma", ids(saringPesanan(daftar, { ...SARINGAN_AWAL, cari: "sari, keb" })), ["3"]);
-uji("nama produk (bukan barang pertama)", ids(saringPesanan(daftar, { ...SARINGAN_AWAL, cari: "benih" })), ["2"]);
-uji("spasi saja = tidak menyaring", ids(saringPesanan(daftar, { ...SARINGAN_AWAL, cari: "   " })).length, 5);
-uji("tidak ada yang cocok", ids(saringPesanan(daftar, { ...SARINGAN_AWAL, cari: "tidakada" })), []);
-uji("tanda baca saja tidak mencocokkan semua nomor", ids(saringPesanan(daftar, { ...SARINGAN_AWAL, cari: "-" })), []);
+console.log("\nKunci cari (dikirim ke database)");
+uji("kosong -> tidak menyaring", kunciCari(""), null);
+uji("spasi saja -> tidak menyaring", kunciCari("   "), null);
+uji("tanda baca saja -> tidak ada yang cocok (BUKAN semua)", kunciCari(" - , "), "");
+uji("nomor bertanda baca dinormalkan", kunciCari("2410 15abc-DEF"), "241015abcdef");
+uji("hasil hanya [a-z0-9] (aman untuk filter PostgREST & ILIKE)", /^[a-z0-9]*$/.test(kunciCari("100% a_b,c.(d)*")), true);
+uji("% dan _ tidak lolos sebagai wildcard", kunciCari("%_%"), "");
 
-console.log("\nChip status");
-const chip = chipStatus(saringTanpaStatus(daftar, SARINGAN_AWAL));
-uji("chip pertama = Semua dengan total", chip[0], { value: "semua", label: "Semua", count: 5 });
+console.log("\nPencarian (tiruan kolom database)");
+uji("nomor bertanda baca tetap ketemu", cariDb("2410 15abc-def"), ["1"]);
+uji("potongan nomor", cariDb("XYZ"), ["2"]);
+uji("nomor resi", cariDb("spxid 0123"), ["2"]);
+uji("nama pembeli dengan koma", cariDb("sari, keb"), ["3"]);
+uji("nama produk (bukan barang pertama)", cariDb("benih"), ["2"]);
+uji("nama produk dua kata", cariDb("pupuk daun"), ["2"]);
+uji("akun pembeli bergaris bawah", cariDb("budi_tani"), ["1"]);
+uji("spasi saja = tidak menyaring", cariDb("   ").length, 5);
+uji("tidak ada yang cocok", cariDb("tidakada"), []);
+uji("tanda baca saja tidak mencocokkan semua nomor", cariDb("-"), []);
+uji(
+  "ekspresi di migrasi = tiruan di uji ini (tiga kolom + nama produk, tanpa tanda baca)",
+  (() => {
+    const sql = fs.readFileSync(
+      new URL("../../supabase/migrations/20261112130000_status_shopee_tambahan.sql", import.meta.url),
+      "utf8",
+    );
+    return (
+      /coalesce\(external_order_id, ''\)/.test(sql) &&
+      /coalesce\(tracking_number, ''\)/.test(sql) &&
+      /coalesce\(buyer_username, ''\)/.test(sql) &&
+      /jsonb_path_query_array\(items, '\$\[\*\]\.nama'\)/.test(sql) &&
+      /'\[\^a-z0-9\]\+', '', 'g'/.test(sql) &&
+      /lower\(/.test(sql)
+    );
+  })(),
+  true,
+);
+
+console.log("\nPaginasi");
+uji("PER_HALAMAN = 50", PER_HALAMAN, 50);
+uji("halaman 1 -> 0..49", rentangHalaman(1), { dari: 0, sampai: 49 });
+uji("halaman 3 -> 100..149", rentangHalaman(3), { dari: 100, sampai: 149 });
+uji("halaman 0 / negatif / NaN -> 1", [halamanAman(0), halamanAman(-4), halamanAman(Number.NaN)], [1, 1, 1]);
+uji("halaman pecahan dibulatkan ke bawah", halamanAman(2.7), 2);
+uji("halaman melewati akhir dijepit ke halaman terakhir", halamanAman(999, 9005), 181);
+uji("total belum terbaca -> halaman apa adanya", halamanAman(7, null), 7);
+uji("9.005 pesanan = 181 halaman", jumlahHalaman(9005), 181);
+uji("tepat 50 = 1 halaman", jumlahHalaman(50), 1);
+uji("51 = 2 halaman", jumlahHalaman(51), 2);
+uji("0 pesanan tetap 1 halaman (bukan 'dari 0')", jumlahHalaman(0), 1);
+uji("total rusak -> 1 halaman", jumlahHalaman(Number.NaN), 1);
+uji("teks halaman 1", teksRentang(1, 50, 9005), "Menampilkan 1–50 dari 9.005 pesanan");
+uji("teks halaman terakhir yang tidak penuh", teksRentang(181, 5, 9005), "Menampilkan 9.001–9.005 dari 9.005 pesanan");
+uji("teks tanpa total yang masuk akal", teksRentang(2, 50, null), "Menampilkan 51–100 pesanan");
+uji("teks: total lebih kecil dari rentang tidak ditulis", teksRentang(2, 50, 60), "Menampilkan 51–100 pesanan");
+uji("teks kosong -> null", teksRentang(1, 0, 0), null);
+uji("ribuan pakai titik", angka(1234567), "1.234.567");
+
+console.log("\nTombol nomor halaman");
+uji("sedikit halaman = semua tampil", nomorHalaman(2, 4), [1, 2, 3, 4]);
+uji("tengah", nomorHalaman(50, 181), [1, "…", 48, 49, 50, 51, 52, "…", 181]);
+uji("awal", nomorHalaman(1, 181), [1, 2, 3, "…", 181]);
+uji("akhir", nomorHalaman(181, 181), [1, "…", 179, 180, 181]);
+uji("dekat awal: 1 menyambung ke 2..6 tanpa …", nomorHalaman(4, 181), [1, 2, 3, 4, 5, 6, "…", 181]);
+uji("satu halaman", nomorHalaman(1, 1), [1]);
+uji("aktif di luar jangkauan dijepit", nomorHalaman(500, 3), [1, 2, 3]);
+
+console.log("\nChip status dari hitungan database");
+const hitung = { perlu_dikirim: 4, diproses: 425, selesai: 0, dibatalkan: 27, pengembalian: 3 };
+uji("chip pertama = Semua dengan total", chipDariHitungan(hitung, 500)[0], { value: "semua", label: "Semua", count: 500 });
 uji(
   "urut kosakata, hanya yang punya pesanan",
-  chip.slice(1).map((c) => c.value),
-  ["perlu_dikirim", "selesai", "dibatalkan", "status_baru_shopee"],
+  chipDariHitungan(hitung, 500).slice(1).map((c) => c.value),
+  ["perlu_dikirim", "diproses", "dibatalkan", "pengembalian"],
 );
-uji("status asing tetap punya chip", chip.find((c) => c.value === "status_baru_shopee")?.count, 1);
-uji("hitungan selesai", chip.find((c) => c.value === "selesai")?.count, 2);
+uji("status pengembalian punya label", chipDariHitungan(hitung, 500).find((c) => c.value === "pengembalian")?.label, "Pengembalian / retur");
 uji(
-  "chip mengikuti toko yang dipilih",
-  chipStatus(saringTanpaStatus(daftar, { ...SARINGAN_AWAL, toko: "A" })).map((c) => [c.value, c.count]),
-  [["semua", 2], ["perlu_dikirim", 1], ["selesai", 1]],
+  "status yang SEDANG dipilih tetap tampil walau nol",
+  chipDariHitungan(hitung, 500, "selesai").map((c) => c.value).includes("selesai"),
+  true,
 );
-uji(
-  "chip tidak ikut tersaring oleh status aktif",
-  chipStatus(saringTanpaStatus(daftar, { ...SARINGAN_AWAL, status: "selesai" }))[0].count,
-  5,
-);
-uji("daftar kosong = hanya chip Semua 0", chipStatus([]), [{ value: "semua", label: "Semua", count: 0 }]);
+uji("hitungan kosong = hanya chip Semua", chipDariHitungan({}, 0), [{ value: "semua", label: "Semua", count: 0 }]);
+uji("kunci asing di hitungan diabaikan", chipDariHitungan({ xyz: 5 }, 5).length, 1);
 
 console.log("\nPill");
 uji("selesai -> done", jenisPill("selesai"), "done");
@@ -149,6 +223,10 @@ uji("pilih toko belum disinkron -> peringatan", tokoBelumDisinkron("D", toko)?.n
 uji("pilih toko tersinkron -> tanpa peringatan", tokoBelumDisinkron("A", toko), null);
 uji("pilih semua -> tanpa peringatan", tokoBelumDisinkron("semua", toko), null);
 uji("toko tak dikenal -> tanpa peringatan palsu", tokoBelumDisinkron("C", toko), null);
+
+console.log("\nStatus baru (12 Nov 2026)");
+uji("menunggu_konfirmasi -> cont", jenisPill("menunggu_konfirmasi"), "cont");
+uji("pengembalian -> refund", jenisPill("pengembalian"), "refund");
 
 console.log(`\nDaftar Pesanan : ${gagal === 0 ? "LULUS" : "GAGAL"} ${lulus}/${lulus + gagal}`);
 process.exit(gagal === 0 ? 0 : 1);

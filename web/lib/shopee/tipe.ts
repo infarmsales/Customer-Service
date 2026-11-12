@@ -41,7 +41,12 @@ export type StatusPesananShopee =
   | "COMPLETED"
   | "IN_CANCEL"
   | "CANCELLED"
-  | "INVOICE_PENDING";
+  | "INVOICE_PENDING"
+  /* Tidak di daftar parameter get_order_list, tetapi muncul di
+     get_order_detail toko asli — lihat PETA_STATUS_SHOPEE. */
+  | "TO_CONFIRM_RECEIVE"
+  | "RETRY_SHIP"
+  | "TO_RETURN";
 
 /** Dari: v2.order.get_order_list, bagian Response. Di dalam `response`. */
 export type DaftarPesanan = {

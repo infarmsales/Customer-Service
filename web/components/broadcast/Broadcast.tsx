@@ -645,7 +645,9 @@ export default function Broadcast() {
   return (
     <div className="flex flex-col gap-4 p-5 px-6 pb-10 max-mobile:p-3.5 max-mobile:pb-8">
       {/* Tab marketplace */}
-      <div className="flex gap-1.5 overflow-x-auto border-b border-line">
+      {/* overflow-y-hidden + pb-px: sama dengan tab Chat & Pesanan — tanpa
+          ini -mb-px pada tombol memunculkan bilah gulir vertikal. */}
+      <div className="flex gap-1.5 overflow-x-auto overflow-y-hidden border-b border-line pb-px">
         {MP.map((m) => (
           <button
             key={m.key}

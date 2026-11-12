@@ -20,10 +20,12 @@ export type StatusInternal =
   | "perlu_dikirim"
   | "diproses"
   | "dalam_pengiriman"
+  | "menunggu_konfirmasi"
   | "selesai"
   | "proses_batal"
   | "dibatalkan"
   | "menunggu_invoice"
+  | "pengembalian"
   | "lainnya";
 
 export const SEMUA_STATUS_INTERNAL: readonly StatusInternal[] = [
@@ -31,10 +33,12 @@ export const SEMUA_STATUS_INTERNAL: readonly StatusInternal[] = [
   "perlu_dikirim",
   "diproses",
   "dalam_pengiriman",
+  "menunggu_konfirmasi",
   "selesai",
   "proses_batal",
   "dibatalkan",
   "menunggu_invoice",
+  "pengembalian",
   "lainnya",
 ];
 
@@ -44,10 +48,12 @@ export const LABEL_STATUS: Record<StatusInternal, string> = {
   perlu_dikirim: "Perlu dikirim",
   diproses: "Diproses",
   dalam_pengiriman: "Dalam pengiriman",
+  menunggu_konfirmasi: "Menunggu konfirmasi diterima",
   selesai: "Selesai",
   proses_batal: "Proses batal",
   dibatalkan: "Dibatalkan",
   menunggu_invoice: "Menunggu invoice",
+  pengembalian: "Pengembalian / retur",
   lainnya: "Lainnya",
 };
 

@@ -750,7 +750,12 @@ export default function Pesanan() {
 
   return (
     <div className="flex flex-col gap-3.5 p-5 px-6 pb-10 max-mobile:p-3.5 max-mobile:pb-8">
-      <div className="flex gap-1.5 overflow-x-auto border-b border-line">
+      {/* Hanya bergulir kanan-kiri. overflow-x-auto saja ikut menyalakan
+          sumbu vertikal, dan -mb-px pada tombol tab melimpah 1px —
+          cukup untuk memunculkan bilah gulir atas-bawah di ujung kanan
+          (dilaporkan 12 Nov 2026). pb-px memberi ruang 1px itu supaya
+          garis bawah tab aktif tidak terpotong. Sama dengan tab Chat. */}
+      <div className="flex gap-1.5 overflow-x-auto overflow-y-hidden border-b border-line pb-px">
         {TABS.map((t) => (
           <button
             key={t.key}
