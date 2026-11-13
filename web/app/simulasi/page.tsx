@@ -29,7 +29,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { headerBerSesi } from "@/lib/supabase/header";
 import { PESAN_SIMULASI_MATI, SIMULASI_HIDUP } from "@/lib/simulasi";
-import UjiGemini from "@/components/ai/UjiGemini";
+import ObrolanGemini from "@/components/ai/ObrolanGemini";
 import {
   cariToko,
   DAFTAR_TOKO,
@@ -77,6 +77,9 @@ export default function SimulasiPelanggan() {
   const [sibuk, setSibuk] = useState(false);
   const [riwayat, setRiwayat] = useState<Gelembung[]>([]);
   const [ujiGemini, setUjiGemini] = useState(false);
+  /* Sekali dibuka, panel obrolan tetap terpasang (hanya disembunyikan)
+     supaya obrolan tidak hilang karena "Tutup" yang tidak sengaja. */
+  const [geminiDimuat, setGeminiDimuat] = useState(false);
   const bawah = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -220,14 +223,17 @@ export default function SimulasiPelanggan() {
             {LABEL_PLATFORM[aktif.platform]} · biasanya membalas dalam beberapa menit
           </div>
         </div>
-        {/* Uji foto SUNGGUHAN dengan Gemini — panel terpisah dari alur
-            pembeli di bawah. Alur pembeli tetap tidak pernah memanggil
+        {/* Obrolan uji dengan Gemini (bolak-balik, boleh foto SUNGGUHAN)
+            — panel terpisah dari alur pembeli di bawah. Alur pembeli tetap tidak pernah memanggil
             AI berbayar (lihat /api/simulasi); panel ini memanggil
-            Gemini HANYA saat tombolnya di dalam panel ditekan, dan
+            Gemini HANYA saat tombol Kirim di dalam panel ditekan, dan
             tidak membuat percakapan apa pun. */}
         <button
           type="button"
-          onClick={() => setUjiGemini(true)}
+          onClick={() => {
+            setUjiGemini(true);
+            setGeminiDimuat(true);
+          }}
           className="min-h-9 shrink-0 cursor-pointer rounded-lg border-none bg-white/20 px-2.5 py-1.5 text-[0.72rem] font-bold text-white"
         >
           🧪 Uji Gemini
@@ -240,8 +246,10 @@ export default function SimulasiPelanggan() {
         </Link>
       </header>
 
-      {ujiGemini && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#0f172a]/95 p-4 max-mini:p-2">
+      {geminiDimuat && (
+        <div
+          className={`fixed inset-0 z-50 overflow-y-auto bg-[#0f172a]/95 p-4 max-mini:p-2 ${ujiGemini ? "" : "hidden"}`}
+        >
           <div className="mx-auto flex max-w-2xl flex-col gap-3">
             <button
               type="button"
@@ -250,8 +258,8 @@ export default function SimulasiPelanggan() {
             >
               ✕ Tutup
             </button>
-            <UjiGemini
-              judul="🧪 Uji foto dengan Gemini"
+            <ObrolanGemini
+              judul="🧪 Obrolan dengan Gemini"
               contoh={[
                 "Kak tanaman saya kenapa ya daunnya begini?",
                 "Ini produk yang saya terima, cara pakainya gimana?",

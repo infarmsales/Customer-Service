@@ -6,6 +6,10 @@
            generate.
      POST  satu balasan Gemini untuk satu pesan uji, boleh dengan FOTO
            SUNGGUHAN. BERBAYAR (atau memakai kuota tier gratis).
+           `riwayat` (opsional) = giliran sebelumnya untuk obrolan
+           bolak-balik di Simulasi. Seluruh riwayat dikirim ulang ke
+           Google tiap giliran, jadi token masuk tumbuh per balasan;
+           dibatasi MAKS_RIWAYAT giliran & MAKS_FOTO_OBROLAN foto.
 
    BUKAN JALUR PELANGGAN
    Route ini tidak menulis apa pun: tidak membuat percakapan, tidak
@@ -44,7 +48,16 @@ import {
   mintaGemini,
   MODEL_GEMINI_BAWAAN,
 } from "@/lib/gemini";
-import { CATATAN_FOTO, modelSah, periksaGambar, sebabKosong, type GambarUji } from "@/lib/geminiAturan";
+import {
+  CATATAN_FOTO,
+  MAKS_BASE64,
+  MAKS_FOTO_OBROLAN,
+  modelSah,
+  periksaGambar,
+  rapikanRiwayat,
+  sebabKosong,
+  type GambarUji,
+} from "@/lib/geminiAturan";
 import { getSupabaseSebagai, tokenDariHeader } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { siapkanSumberTemplate } from "@/lib/db/templatesServer";
@@ -89,7 +102,7 @@ export async function POST(req: Request) {
   const tolak = await wajibLogin(req);
   if (tolak) return tolak;
 
-  let body: { pesan?: unknown; model?: unknown; gambar?: unknown; lewatiGerbang?: unknown };
+  let body: { pesan?: unknown; model?: unknown; gambar?: unknown; lewatiGerbang?: unknown; riwayat?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -106,6 +119,14 @@ export async function POST(req: Request) {
   const model = body.model === undefined || body.model === "" ? MODEL_GEMINI_BAWAAN : body.model;
   if (!modelSah(model)) return NextResponse.json({ error: "Nama model Gemini tidak sah." }, { status: 400 });
   const lewati = body.lewatiGerbang === true;
+
+  const { riwayat, galat: galatRiwayat } = rapikanRiwayat(body.riwayat, MAKS_FOTO_OBROLAN - (gambar ? 1 : 0));
+  if (galatRiwayat) return NextResponse.json({ error: galatRiwayat }, { status: 400 });
+  const totalFoto = riwayat.reduce((n, m) => n + (m.gambar?.data.length ?? 0), gambar?.data.length ?? 0);
+  if (totalFoto > MAKS_BASE64) {
+    return NextResponse.json({ error: "Foto di obrolan ini terlalu besar bila digabung. Mulai ulang obrolan." }, { status: 413 });
+  }
+  const adaFoto = Boolean(gambar) || riwayat.some((m) => m.gambar);
 
   await Promise.all([siapkanSumberTemplate(), siapkanSumberSatpam()]);
   const keputusan = routeToCategory(teks);
@@ -151,11 +172,11 @@ export async function POST(req: Request) {
   const invarian = getInvariantBlock();
   const { teks: faqTeks } = bacaBerkasFaq(keputusan.berkas);
   const blokFaq = buildFaqBlock(faqTeks);
-  const system = invarian.teks + blokFaq.teks + (gambar ? "\n\n" + CATATAN_FOTO : "");
+  const system = invarian.teks + blokFaq.teks + (adaFoto ?"\n\n" + CATATAN_FOTO : "");
 
   const mulai = Date.now();
   try {
-    const j = await mintaGemini({ model, system, teks, gambar });
+    const j = await mintaGemini({ model, system, teks, gambar, riwayat });
     const kosong = sebabKosong(j);
     if (kosong) {
       return NextResponse.json(
@@ -177,6 +198,7 @@ export async function POST(req: Request) {
       kategori: keputusan.kategori,
       berkasKb: keputusan.berkas,
       denganFoto: Boolean(gambar),
+      jumlahRiwayat: riwayat.length,
       lewatiGerbang: lewati,
       panjang: ukurBalasan(reply),
     });
