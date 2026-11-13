@@ -115,3 +115,47 @@ export function formatUsd(value: number): string {
 export function formatTokens(value: number): string {
   return new Intl.NumberFormat("id-ID").format(value);
 }
+
+/* ===========================================================
+   Tarif Gemini — HANYA untuk meja uji (halaman AI Chatbot & Simulasi).
+
+   USD per 1 juta token, tarif berbayar (paid tier) untuk prompt
+   <= 200 ribu token, dari pengetahuan per pertengahan 2026 — BELUM
+   diverifikasi ulang ke ai.google.dev/pricing. Token "berpikir"
+   (thoughtsTokenCount) ditagih sebagai token keluar.
+
+   Diskon cache Gemini sengaja TIDAK dihitung: angkanya jadi
+   perkiraan atas (lebih mahal), bukan lebih murah dari kenyataan.
+
+   API key tier GRATIS tidak ditagih sama sekali — tetapi isi
+   permintaannya boleh dipakai Google untuk melatih model. Angka di
+   sini = seandainya berbayar.
+   =========================================================== */
+const HARGA_GEMINI: [awalan: string, harga: { input: number; output: number }][] = [
+  /* Urutan penting: awalan yang lebih panjang lebih dulu. */
+  ["gemini-2.5-flash-lite", { input: 0.1, output: 0.4 }],
+  ["gemini-2.5-flash", { input: 0.3, output: 2.5 }],
+  ["gemini-2.5-pro", { input: 1.25, output: 10 }],
+  ["gemini-2.0-flash-lite", { input: 0.075, output: 0.3 }],
+  ["gemini-2.0-flash", { input: 0.1, output: 0.4 }],
+];
+
+export type BiayaGemini = {
+  masuk: number;
+  keluar: number;
+  berpikir: number;
+  usd: number;
+  idr: number;
+  /** false = model tidak ada di tabel; usd/idr = 0 dan tidak boleh dibaca sebagai gratis. */
+  dikenal: boolean;
+};
+
+export function biayaGemini(
+  model: string,
+  token: { masuk: number; keluar: number; berpikir: number },
+): BiayaGemini {
+  const harga = HARGA_GEMINI.find(([awalan]) => model === awalan || model.startsWith(awalan + "-"))?.[1];
+  const per = (t: number, tarif: number) => (t / 1_000_000) * tarif;
+  const usd = harga ? per(token.masuk, harga.input) + per(token.keluar + token.berpikir, harga.output) : 0;
+  return { ...token, usd, idr: usd * USD_TO_IDR, dikenal: Boolean(harga) };
+}

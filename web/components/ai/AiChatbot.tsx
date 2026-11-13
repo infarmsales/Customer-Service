@@ -11,6 +11,7 @@ import CostMeter, {
 import { computeCost, type Usage } from "@/lib/pricing";
 import { BATAS_BALASAN, ukurBalasan } from "@/lib/limits";
 import FlagKoreksi from "./FlagKoreksi";
+import UjiGemini from "./UjiGemini";
 import { usePendingFlagCount } from "@/lib/db";
 
 /* ===========================================================
@@ -679,6 +680,16 @@ export default function AiChatbot() {
                 setSession(EMPTY_SESSION);
                 toast("Hitungan sesi dinolkan");
               }}
+            />
+          </div>
+
+          {/* Gemini — meja uji pembanding. Panggilannya lewat
+              /api/uji-gemini, terpisah dari /api/chat, jadi chat
+              pelanggan tetap Claude apa pun yang dicoba di sini. */}
+          <div className="mt-4">
+            <UjiGemini
+              judul="🧪 Uji Gemini (pembanding)"
+              contoh={SAMPLES.filter((s) => s.catatan === "perlu AI").map((s) => s.pesan)}
             />
           </div>
         </>
