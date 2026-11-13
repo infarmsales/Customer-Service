@@ -23,6 +23,10 @@ saldo tanpa sepengetahuan pemiliknya — jangan diulangi.
   memperkirakan biaya dan aman dipanggil berapa kali pun.
 - Skrip apa pun yang meng-import `@anthropic-ai/sdk` atau memanggil
   `api.anthropic.com`
+- `POST /api/uji-gemini` dan apa pun yang memanggil
+  `generativelanguage.googleapis.com` ...`:generateContent` (Gemini,
+  meja uji di AI Chatbot & Simulasi). `GET /api/uji-gemini` hanya
+  membaca daftar model dan aman.
 - Uji apa pun yang tujuannya "memastikan balasan AI benar"
 
 **`/api/chat` berbahaya justru karena kadang gratis.** Pesan yang cocok
@@ -64,6 +68,7 @@ pemilik proyek menjawab.
 | `npm run uji-daftar-pesanan` | 73 kasus tab Daftar Pesanan (tabel orders asli, 50 baris per halaman dari database): kunci cari hanya [a-z0-9] (tanda baca saja = tidak ada yang cocok, bukan semua), tiruan kolom `cari_teks` di migrasi tetap menemukan nomor/resi bertanda baca & nama produk, halaman dijepit (0/NaN/melewati akhir), 9.005 pesanan = 181 halaman, chip status yang sedang dipilih tidak hilang walau nol, toko yang belum pernah disinkronkan diberi peringatan |
 | `npm run uji-shopee-sinkron` | 104 kasus sinkron pesanan skala besar: potongan per jam & pembelahan adaptif, anggaran waktu, titik sinkron yang hanya maju setelah potongan tersimpan (simulasi toko 8.000 pesanan/hari), kunci kedaluwarsa, lewati tulis yang tidak berubah, `SHOPEE_SIMPAN_RAW`, tabel keputusan: tombol admin selalu jalan, cron butuh kedua sakelar (nilai rusak = dilewati), dan toko baru dari `shop_id_list` tidak ikut jadwal otomatis |
 | `npm run uji-toko-chat` | 43 kasus daftar toko panel Chat: "Semua toko" hanya chat toko asli, simulasi bernama toko asli tidak ikut terhitung, toko bernama "Test" BUKAN toko uji, toko nonaktif/terhapus yang masih punya chat tetap tampil |
+| `npm run uji-gemini` | 47 kasus meja uji Gemini tanpa jaringan: nama model tidak bisa menyusup ke path URL, foto dicek jenis/ukuran/base64, ringkasan "berpikir" tidak ikut jadi balasan, jawaban kosong karena token habis untuk berpikir dijelaskan, daftar model hanya teks generateContent, API key tidak pernah ikut di pesan galat, tarif flash-lite tidak tertukar dengan flash |
 | `npm run uji-ringkasan` | 21 kasus angka nyata Beranda & Statistik: antrean tertua (bukan rata-rata), rentang waktu, dan nol yang berbeda dari "belum ada data" |
 | `npm run uji-pesanan` | 26 kasus pesanan contoh di tab Pesanan: nomor tidak pernah berubah (kalau berubah, pencarian diam-diam gagal), data asli tidak ditimpa, katalog kosong tidak mengarang nama produk |
 | `npm run uji-cari` | 46 kasus pencocokan pencarian & papan croscek: nomor bertanda baca tetap ketemu, nama pendek TIDAK melebar, nomor yang tidak ketemu tidak pernah hilang dari daftar |

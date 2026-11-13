@@ -29,6 +29,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { headerBerSesi } from "@/lib/supabase/header";
 import { PESAN_SIMULASI_MATI, SIMULASI_HIDUP } from "@/lib/simulasi";
+import UjiGemini from "@/components/ai/UjiGemini";
 import {
   cariToko,
   DAFTAR_TOKO,
@@ -75,6 +76,7 @@ export default function SimulasiPelanggan() {
   const [teks, setTeks] = useState("");
   const [sibuk, setSibuk] = useState(false);
   const [riwayat, setRiwayat] = useState<Gelembung[]>([]);
+  const [ujiGemini, setUjiGemini] = useState(false);
   const bawah = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -218,6 +220,18 @@ export default function SimulasiPelanggan() {
             {LABEL_PLATFORM[aktif.platform]} · biasanya membalas dalam beberapa menit
           </div>
         </div>
+        {/* Uji foto SUNGGUHAN dengan Gemini — panel terpisah dari alur
+            pembeli di bawah. Alur pembeli tetap tidak pernah memanggil
+            AI berbayar (lihat /api/simulasi); panel ini memanggil
+            Gemini HANYA saat tombolnya di dalam panel ditekan, dan
+            tidak membuat percakapan apa pun. */}
+        <button
+          type="button"
+          onClick={() => setUjiGemini(true)}
+          className="min-h-9 shrink-0 cursor-pointer rounded-lg border-none bg-white/20 px-2.5 py-1.5 text-[0.72rem] font-bold text-white"
+        >
+          🧪 Uji Gemini
+        </button>
         <Link
           href="/chat"
           className="shrink-0 rounded-lg bg-white/20 px-2.5 py-1.5 text-[0.72rem] font-bold text-white no-underline"
@@ -225,6 +239,28 @@ export default function SimulasiPelanggan() {
           Console CS →
         </Link>
       </header>
+
+      {ujiGemini && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#0f172a]/95 p-4 max-mini:p-2">
+          <div className="mx-auto flex max-w-2xl flex-col gap-3">
+            <button
+              type="button"
+              onClick={() => setUjiGemini(false)}
+              className="min-h-10 cursor-pointer self-end rounded-xl border border-white/25 bg-white/10 px-3.5 text-[0.84rem] font-bold text-white"
+            >
+              ✕ Tutup
+            </button>
+            <UjiGemini
+              judul="🧪 Uji foto dengan Gemini"
+              contoh={[
+                "Kak tanaman saya kenapa ya daunnya begini?",
+                "Ini produk yang saya terima, cara pakainya gimana?",
+                "Paket saya datang begini kak",
+              ]}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Toko yang SAMA dengan panel kiri console. Penonton harus
           bisa menunjuk nama yang sama di dua layar; nama karangan
