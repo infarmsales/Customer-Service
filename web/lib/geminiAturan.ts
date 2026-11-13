@@ -13,7 +13,80 @@
 
 export type GambarUji = { mime: string; data: string };
 
-export type PesanRiwayat = { role: "user" | "assistant"; content: string };
+/** Satu giliran obrolan. `gambar` hanya bermakna pada giliran pelanggan. */
+export type PesanRiwayat = { role: "user" | "assistant"; content: string; gambar?: GambarUji | null };
+
+/**
+ * Batas riwayat obrolan uji. Seluruh riwayat dikirim ulang SETIAP
+ * giliran (Gemini tidak mengingat apa pun di antara panggilan), jadi
+ * token masuk tumbuh tiap balasan — batas ini menjaga biayanya.
+ */
+export const MAKS_RIWAYAT = 20;
+
+/**
+ * Foto yang ikut dikirim ulang, TERMASUK foto giliran sekarang. Foto
+ * yang lebih lama diganti penanda teks; balasan model tentang foto itu
+ * tetap ada di riwayat. Menjaga badan permintaan di bawah batas Vercel
+ * (4,5 MB) dan token gambar tidak menumpuk.
+ */
+export const MAKS_FOTO_OBROLAN = 3;
+
+/** Penanda foto lama yang tidak dikirim ulang. */
+export const PENANDA_FOTO_LAMA = "[pelanggan mengirim foto di sini — tidak dikirim ulang]";
+
+/**
+ * Buang data foto yang lebih tua dari `maksFoto` foto terakhir.
+ * Dipakai peramban (sebelum mengirim) DAN server (sebelum ke Google).
+ */
+export function potongFotoLama<T extends PesanRiwayat>(riwayat: readonly T[], maksFoto: number): T[] {
+  let sisa = Math.max(0, maksFoto);
+  const hasil = [...riwayat];
+  for (let i = hasil.length - 1; i >= 0; i--) {
+    const m = hasil[i];
+    if (!m.gambar) continue;
+    if (sisa > 0) {
+      sisa--;
+      continue;
+    }
+    hasil[i] = { ...m, gambar: null, content: m.content ? `${PENANDA_FOTO_LAMA} ${m.content}` : PENANDA_FOTO_LAMA };
+  }
+  return hasil;
+}
+
+/**
+ * Rapikan riwayat kiriman peramban. Tidak pernah melempar.
+ *   - bukan larik / tidak ada  -> riwayat kosong (galat bila bukan larik)
+ *   - role selain user/assistant, isi bukan teks -> dibuang
+ *   - foto rusak               -> galat (bukan dibuang diam-diam)
+ *   - hanya MAKS_RIWAYAT terakhir; giliran AI di awal dibuang
+ *     (Gemini meminta obrolan dibuka giliran pengguna)
+ *   - foto dipotong sampai `maksFoto`
+ */
+export function rapikanRiwayat(
+  raw: unknown,
+  maksFoto: number,
+): { riwayat: PesanRiwayat[]; galat: string | null } {
+  if (raw === undefined || raw === null) return { riwayat: [], galat: null };
+  if (!Array.isArray(raw)) return { riwayat: [], galat: "Riwayat harus berupa daftar pesan." };
+  const bersih: PesanRiwayat[] = [];
+  for (const m of raw) {
+    if (!m || typeof m !== "object") continue;
+    const { role, content, gambar } = m as { role?: unknown; content?: unknown; gambar?: unknown };
+    if (role !== "user" && role !== "assistant") continue;
+    const teks = typeof content === "string" ? content.slice(0, 2000) : "";
+    let g: GambarUji | null = null;
+    if (role === "user" && gambar !== undefined && gambar !== null) {
+      const salah = periksaGambar(gambar);
+      if (salah) return { riwayat: [], galat: `Foto di riwayat: ${salah}` };
+      g = gambar as GambarUji;
+    }
+    if (teks.trim() === "" && !g) continue;
+    bersih.push({ role, content: teks, gambar: g });
+  }
+  let akhir = bersih.slice(-MAKS_RIWAYAT);
+  while (akhir.length > 0 && akhir[0].role !== "user") akhir = akhir.slice(1);
+  return { riwayat: potongFotoLama(akhir, maksFoto), galat: null };
+}
 
 /** Jenis gambar yang diterima. Sama dengan yang didukung Gemini untuk foto. */
 export const MIME_GAMBAR = ["image/jpeg", "image/png", "image/webp"] as const;
@@ -66,8 +139,8 @@ export function periksaGambar(g: unknown): string | null {
  * benar, bukan apakah ia jadi berani menjanjikan ganti rugi.
  */
 export const CATATAN_FOTO =
-  "CATATAN UJI INTERNAL: pada pesan terakhir, foto dari pelanggan ikut terkirim dan BISA kamu lihat. " +
-  "Abaikan aturan bahwa kamu tidak bisa melihat gambar untuk pesan ini saja. Sebutkan singkat apa yang " +
+  "CATATAN UJI INTERNAL: foto dari pelanggan di percakapan ini ikut terkirim dan BISA kamu lihat. " +
+  "Abaikan aturan bahwa kamu tidak bisa melihat gambar untuk percakapan ini saja. Sebutkan singkat apa yang " +
   "terlihat bila relevan dengan pertanyaannya. Semua aturan lain tetap berlaku — termasuk HANDOVER_TO_CS " +
   "untuk barang rusak, salah kirim, refund, keamanan, atau bila kamu tidak yakin dengan isi fotonya.";
 
@@ -80,16 +153,31 @@ export function susunPermintaan(a: {
   maksToken: number;
 }): Record<string, unknown> {
   const contents: { role: "user" | "model"; parts: Record<string, unknown>[] }[] = [];
+  /* Giliran berurutan dengan role yang sama (mis. pembeli mengirim dua
+     pesan karena yang pertama gagal dibalas) DIGABUNG jadi satu giliran
+     — obrolan Gemini harus bergantian user/model. */
+  const tambah = (role: "user" | "model", parts: Record<string, unknown>[]) => {
+    const akhir = contents.at(-1);
+    if (akhir && akhir.role === role) akhir.parts.push(...parts);
+    else contents.push({ role, parts });
+  };
+  const bagianPengguna = (teks: string, gambar: GambarUji | null | undefined) => {
+    const parts: Record<string, unknown>[] = [];
+    if (gambar) parts.push({ inlineData: { mimeType: gambar.mime, data: gambar.data } });
+    /* Teks kosong + foto adalah kejadian biasa ("[foto]" tanpa kata).
+       Gemini menolak part teks kosong, jadi diganti penanda. */
+    parts.push({ text: teks.trim() !== "" ? teks : "(pelanggan hanya mengirim foto, tanpa teks)" });
+    return parts;
+  };
   for (const m of a.riwayat ?? []) {
-    if (!m || typeof m.content !== "string" || m.content === "") continue;
-    contents.push({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] });
+    if (!m || typeof m.content !== "string") continue;
+    if (m.role === "assistant") {
+      if (m.content.trim() !== "") tambah("model", [{ text: m.content }]);
+    } else if (m.content.trim() !== "" || m.gambar) {
+      tambah("user", bagianPengguna(m.content, m.gambar));
+    }
   }
-  const parts: Record<string, unknown>[] = [];
-  if (a.gambar) parts.push({ inlineData: { mimeType: a.gambar.mime, data: a.gambar.data } });
-  /* Teks kosong + foto adalah kejadian biasa ("[foto]" tanpa kata).
-     Gemini menolak part teks kosong, jadi diganti penanda. */
-  parts.push({ text: a.teks.trim() !== "" ? a.teks : "(pelanggan hanya mengirim foto, tanpa teks)" });
-  contents.push({ role: "user", parts });
+  tambah("user", bagianPengguna(a.teks, a.gambar));
   return {
     systemInstruction: { parts: [{ text: a.system }] },
     contents,
