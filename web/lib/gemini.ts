@@ -24,7 +24,9 @@
 import "server-only";
 import {
   bacaJawaban,
+  bolehCobaUlang,
   galatAman,
+  jelaskanGalat,
   saringModel,
   susunPermintaan,
   type GambarUji,
@@ -67,27 +69,59 @@ export class GalatGemini extends Error {
   }
 }
 
-async function panggil(path: string, init: RequestInit): Promise<unknown> {
-  const kunci = process.env.GEMINI_API_KEY;
-  if (!kunci) throw new GalatGemini("GEMINI_API_KEY belum diisi di environment server.", 503);
+/**
+ * Anggaran waktu SATU permintaan ke route, termasuk satu coba ulang.
+ * Harus di bawah maxDuration route (60 dtk): kalau Vercel yang memutus
+ * lebih dulu, peramban hanya menerima halaman galat HTML tanpa
+ * penjelasan apa pun.
+ */
+const ANGGARAN_MS = 50_000;
+/** Coba ulang hanya bila sisa waktu masih cukup untuk satu jawaban. */
+const SISA_MINIMAL_COBA_ULANG_MS = 15_000;
+
+async function panggilSekali(path: string, init: RequestInit, kunci: string, batasMs: number): Promise<unknown> {
   let res: Response;
   try {
     res = await fetch(`${DASAR}${path}`, {
       ...init,
       headers: { "Content-Type": "application/json", "x-goog-api-key": kunci, ...(init.headers ?? {}) },
       cache: "no-store",
-      signal: AbortSignal.timeout(60_000),
+      signal: AbortSignal.timeout(batasMs),
     });
   } catch (err) {
+    const habisWaktu = (err as Error).name === "TimeoutError" || (err as Error).name === "AbortError";
+    if (habisWaktu) {
+      throw new GalatGemini(
+        jelaskanGalat(504, `tidak ada jawaban dalam ${Math.round(batasMs / 1000)} detik`),
+        504,
+      );
+    }
     throw new GalatGemini(galatAman(`Tidak bisa menghubungi Gemini: ${(err as Error).message}`, kunci), 502);
   }
   const json = (await res.json().catch(() => null)) as { error?: { message?: unknown; status?: unknown } } | null;
   if (!res.ok) {
     const isi = typeof json?.error?.message === "string" ? json.error.message : `HTTP ${res.status}`;
     const status = typeof json?.error?.status === "string" ? ` (${json.error.status})` : "";
-    throw new GalatGemini(galatAman(`Gemini menolak permintaan: ${isi}${status}`, kunci), res.status);
+    throw new GalatGemini(jelaskanGalat(res.status, galatAman(`Gemini menolak permintaan: ${isi}${status}`, kunci)), res.status);
   }
   return json;
+}
+
+async function panggil(path: string, init: RequestInit): Promise<unknown> {
+  const kunci = process.env.GEMINI_API_KEY;
+  if (!kunci) throw new GalatGemini("GEMINI_API_KEY belum diisi di environment server.", 503);
+  const batas = Date.now() + ANGGARAN_MS;
+  try {
+    return await panggilSekali(path, init, kunci, ANGGARAN_MS);
+  } catch (err) {
+    /* Satu coba ulang untuk server Google yang penuh sesaat. Permintaan
+       yang ditolak 503/500 tidak menghasilkan balasan dan tidak ditagih. */
+    if (!(err instanceof GalatGemini) || !bolehCobaUlang(err.status)) throw err;
+    await new Promise((r) => setTimeout(r, 1500));
+    const sisa = batas - Date.now();
+    if (sisa < SISA_MINIMAL_COBA_ULANG_MS) throw err;
+    return await panggilSekali(path, init, kunci, sisa);
+  }
 }
 
 let cacheModel: { pada: number; daftar: ModelGemini[] } | null = null;

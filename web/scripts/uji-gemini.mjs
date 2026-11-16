@@ -31,6 +31,8 @@ const {
   PENANDA_FOTO_LAMA,
   rapikanRiwayat,
   potongFotoLama,
+  bolehCobaUlang,
+  jelaskanGalat,
 } = await import("../lib/geminiAturan.ts");
 const { biayaGemini } = await import("../lib/pricing.ts");
 
@@ -174,12 +176,30 @@ uji("key tidak ikut di pesan", galatAman(`API key not valid: ${KEY}`, KEY).inclu
 uji("pola AIza lain juga disembunyikan", galatAman("key AIzaSyOTHERKEY_abcdefghijklmnopqrstu bocor", undefined).includes("AIza"), false);
 uji("pesan panjang dipotong", galatAman("x".repeat(500), undefined).length <= 301, true);
 
+console.log("\nGalat Google yang dijelaskan");
+uji("503 penuh & 500 dicoba ulang sekali", [bolehCobaUlang(503), bolehCobaUlang(500)], [true, true]);
+uji("429 kuota habis, 400, 403, 504 TIDAK dicoba ulang", [429, 400, 403, 504].map(bolehCobaUlang), [false, false, false, false]);
+const g503 = jelaskanGalat(503, "high demand (UNAVAILABLE)");
+uji("503 dijelaskan: penuh & tidak ditagih, pesan asli tetap ada", [g503.includes("penuh"), g503.includes("tidak ditagih"), g503.includes("UNAVAILABLE")], [true, true, true]);
+uji("429 dijelaskan sebagai kuota", jelaskanGalat(429, "x").includes("Kuota"), true);
+uji("504 dijelaskan sebagai terlalu lama", jelaskanGalat(504, "x").includes("terlalu lama"), true);
+uji("galat lain tidak diubah", jelaskanGalat(400, "Gemini menolak permintaan: bad"), "Gemini menolak permintaan: bad");
+
 console.log("\nBiaya (tarif bila berbayar)");
 const b = biayaGemini("gemini-2.5-flash", { masuk: 1_000_000, keluar: 0, berpikir: 0 });
 uji("1 juta token masuk flash = $0,30", Math.round(b.usd * 100) / 100, 0.3);
 uji("token berpikir ditagih sebagai keluar", biayaGemini("gemini-2.5-flash", { masuk: 0, keluar: 0, berpikir: 1_000_000 }).usd, 2.5);
 uji("flash-lite tidak tertukar dengan flash", biayaGemini("gemini-2.5-flash-lite", { masuk: 1_000_000, keluar: 0, berpikir: 0 }).usd, 0.1);
-uji("versi pratinjau memakai tarif keluarganya", biayaGemini("gemini-2.5-pro-preview-06-05", { masuk: 1_000_000, keluar: 0, berpikir: 0 }).usd, 1.25);
+uji("versi pratinjau memakai tarif keluarganya", biayaGemini("gemini-2.5-pro-preview-06-05", { masuk: 100_000, keluar: 0, berpikir: 0 }).usd, 0.125);
+const juta = { masuk: 1_000_000, keluar: 0, berpikir: 0 };
+uji("Gemini 3.6 Flash dikenal: $0,75 masuk", biayaGemini("gemini-3.6-flash", juta).usd, 0.75);
+uji("Gemini 3.5 Flash-Lite: $0,30 masuk", biayaGemini("gemini-3.5-flash-lite", juta).usd, 0.3);
+uji("Gemini 3 Flash Preview: $3 keluar", biayaGemini("gemini-3-flash-preview", { masuk: 0, keluar: 1_000_000, berpikir: 0 }).usd, 3);
+uji("Gemini 4 Hydrogen: $1,50 masuk", biayaGemini("gemini-4-hydrogen", juta).usd, 1.5);
+uji("token cache memakai tarif cache (2.5 flash: $0,03)", Math.round(biayaGemini("gemini-2.5-flash", { ...juta, dariCache: 1_000_000 }).usd * 1000) / 1000, 0.03);
+uji("dariCache rusak (> masuk / negatif) tidak membuat biaya aneh", [biayaGemini("gemini-2.5-flash", { ...juta, dariCache: 5_000_000 }).usd >= 0, biayaGemini("gemini-2.5-flash", { ...juta, dariCache: -9 }).usd], [true, 0.3]);
+uji("3.1 Pro <= 200K: $2 per juta masuk", biayaGemini("gemini-3.1-pro-preview", { masuk: 200_000, keluar: 0, berpikir: 0 }).usd, 0.4);
+uji("3.1 Pro > 200K: tarif atas $4", biayaGemini("gemini-3.1-pro-preview", { masuk: 250_000, keluar: 0, berpikir: 0 }).usd, 1);
 const asing = biayaGemini("gemini-9-ultra", { masuk: 100, keluar: 100, berpikir: 0 });
 uji("model asing: dikenal=false, bukan 'gratis' diam-diam", [asing.dikenal, asing.usd], [false, 0]);
 
