@@ -17,7 +17,7 @@
 import { useRef, useState } from "react";
 import { actionTagClass } from "./actionTag";
 import { headerBerSesi } from "@/lib/supabase/header";
-import { kecilkanFoto, useInfoGemini } from "./geminiBersama";
+import { bacaJsonAman, kecilkanFoto, useInfoGemini } from "./geminiBersama";
 import { BATAS_BALASAN } from "@/lib/limits";
 import { formatIdr, formatTokens, formatUsd } from "@/lib/pricing";
 
@@ -78,7 +78,7 @@ export default function UjiGemini({ judul = "🧪 Uji Gemini", contoh = [] as st
           gambar: foto ? { mime: foto.mime, data: foto.data } : undefined,
         }),
       });
-      const j = await r.json();
+      const j = await bacaJsonAman(r);
       if (!r.ok) {
         setGalat(j?.error ?? `Permintaan gagal (HTTP ${r.status}).`);
         /* Jawaban kosong tetap ditagih — hitung juga. */

@@ -19,7 +19,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { actionTagClass } from "./actionTag";
-import { kecilkanFoto, useInfoGemini } from "./geminiBersama";
+import { bacaJsonAman, kecilkanFoto, useInfoGemini } from "./geminiBersama";
 import { headerBerSesi } from "@/lib/supabase/header";
 import { BATAS_BALASAN } from "@/lib/limits";
 import { formatIdr, formatTokens, formatUsd } from "@/lib/pricing";
@@ -115,7 +115,7 @@ export default function ObrolanGemini({
           riwayat,
         }),
       });
-      const j = await r.json();
+      const j = await bacaJsonAman(r);
       if (!r.ok) {
         /* Jawaban kosong tetap ditagih — hitung juga. */
         catatBiaya(j?.biaya);

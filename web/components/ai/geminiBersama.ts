@@ -48,6 +48,26 @@ export async function kecilkanFoto(berkas: File): Promise<{ mime: string; data: 
   }
 }
 
+/**
+ * Baca jawaban route tanpa pernah meledak. Bila Vercel memutus fungsi
+ * (batas waktu, badan terlalu besar), yang datang adalah halaman galat
+ * teks/HTML, bukan JSON — dulu tampil sebagai "Unexpected token 'A'".
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- bentuk jawaban berbeda per sumber
+export async function bacaJsonAman(r: Response): Promise<any> {
+  const teks = await r.text();
+  try {
+    return JSON.parse(teks);
+  } catch {
+    const sebab = teks.includes("FUNCTION_INVOCATION_TIMEOUT")
+      ? "melewati batas waktu server (60 detik) — Gemini terlalu lama menjawab. Coba lagi atau pilih model yang lebih ringan."
+      : teks.includes("FUNCTION_PAYLOAD_TOO_LARGE") || r.status === 413
+        ? "kiriman terlalu besar (foto terlalu banyak/besar). Mulai ulang obrolan."
+        : teks.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 140) || "jawaban kosong";
+    return { error: `Server memutus permintaan (HTTP ${r.status}): ${sebab}` };
+  }
+}
+
 /** Status Gemini + daftar model untuk dropdown. */
 export function useInfoGemini() {
   const [info, setInfo] = useState<InfoGemini | null>(null);
@@ -59,7 +79,7 @@ export function useInfoGemini() {
     void (async () => {
       try {
         const r = await fetch("/api/uji-gemini", { headers: await headerBerSesi(), cache: "no-store" });
-        const j = await r.json();
+        const j = await bacaJsonAman(r);
         if (batal) return;
         if (!r.ok) {
           setGalatInfo(j?.error ?? `HTTP ${r.status}`);

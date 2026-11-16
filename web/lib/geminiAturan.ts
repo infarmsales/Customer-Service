@@ -276,6 +276,35 @@ export function saringModel(json: unknown): ModelGemini[] {
  * Pesan galat yang aman ditampilkan: API key tidak boleh ikut,
  * apa pun isi pesan dari Google.
  */
+/**
+ * Galat Google yang LAYAK dicoba ulang sekali: server model penuh
+ * (503 UNAVAILABLE) atau sedang sibuk sesaat (500 INTERNAL). Permintaan
+ * yang gagal begini tidak menghasilkan balasan dan tidak ditagih.
+ * 429 TIDAK dicoba ulang — itu kuota habis; mencoba lagi hanya
+ * memperpanjang penolakan.
+ */
+export function bolehCobaUlang(status: number): boolean {
+  return status === 503 || status === 500;
+}
+
+/**
+ * Kalimat galat untuk manusia. Pesan asli Google ikut di belakang
+ * supaya tetap bisa dicari, tapi yang dibaca duluan adalah apa yang
+ * harus dilakukan.
+ */
+export function jelaskanGalat(status: number, asli: string): string {
+  if (status === 503) {
+    return `Model ini sedang penuh di server Google (bukan kesalahan Anda, tidak ditagih). Coba lagi sebentar lagi atau pilih model lain, mis. Flash-Lite. — ${asli}`;
+  }
+  if (status === 429) {
+    return `Kuota Gemini habis untuk saat ini (batas per menit/per hari tier gratis). Tunggu sebentar atau pilih model lain. — ${asli}`;
+  }
+  if (status === 504 || status === 408) {
+    return `Gemini terlalu lama menjawab dan permintaan dihentikan. Coba lagi, atau pilih model yang lebih ringan. — ${asli}`;
+  }
+  return asli;
+}
+
 export function galatAman(pesan: string, kunci: string | undefined): string {
   let t = pesan;
   if (kunci && kunci.length >= 8) t = t.split(kunci).join("[disembunyikan]");
