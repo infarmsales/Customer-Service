@@ -42,7 +42,8 @@
     "uji-daftar-pesanan": "node --experimental-strip-types scripts/uji-daftar-pesanan.mjs",
     "uji-shopee-sinkron": "node --experimental-strip-types scripts/uji-shopee-sinkron.mjs",
     "uji-toko-chat": "node --experimental-strip-types scripts/uji-toko-chat.mjs",
-    "uji-gemini": "node --experimental-strip-types scripts/uji-gemini.mjs"
+    "uji-gemini": "node --experimental-strip-types scripts/uji-gemini.mjs",
+    "uji-openai": "node --experimental-strip-types scripts/uji-openai.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.122.0",

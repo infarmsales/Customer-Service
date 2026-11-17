@@ -15,11 +15,15 @@
 
    Obrolan hanya hidup di memori halaman: tidak membuat percakapan,
    tidak masuk console CS, hilang saat panel ditutup atau dimulai ulang.
+
+   Prop `penyedia="openai"` memakai panel yang SAMA untuk ChatGPT
+   (/api/uji-openai) — gerbang, riwayat, foto, dan angka per giliran
+   identik, supaya kedua model bisa dibandingkan berdampingan.
    =========================================================== */
 
 import { useEffect, useRef, useState } from "react";
 import { actionTagClass } from "./actionTag";
-import { bacaJsonAman, kecilkanFoto, useInfoGemini } from "./geminiBersama";
+import { bacaJsonAman, dariModel, kecilkanFoto, useInfoPenyedia, type Penyedia } from "./geminiBersama";
 import { headerBerSesi } from "@/lib/supabase/header";
 import { BATAS_BALASAN } from "@/lib/limits";
 import { formatIdr, formatTokens, formatUsd } from "@/lib/pricing";
@@ -33,7 +37,7 @@ type Giliran =
       id: number;
       role: "assistant";
       content: string;
-      sumber: "gemini" | "satpam" | "template";
+      sumber: "gemini" | "openai" | "satpam" | "template";
       action: string;
       kode?: string;
       model?: string;
@@ -50,8 +54,10 @@ const idBaru = () => ++urut;
 export default function ObrolanGemini({
   judul = "🧪 Obrolan dengan Gemini",
   contoh = [] as string[],
+  penyedia = "gemini" as Penyedia,
 }) {
-  const { info, galatInfo, model, setModel, pilihanModel, siap, statusTeks, statusKelas } = useInfoGemini();
+  const { p, info, galatInfo, model, setModel, pilihanModel, siap, statusTeks, statusKelas } =
+    useInfoPenyedia(penyedia);
   const [obrolan, setObrolan] = useState<Giliran[]>([]);
   const [pesan, setPesan] = useState("");
   const [foto, setFoto] = useState<(Foto & { nama: string }) | null>(null);
@@ -104,7 +110,7 @@ export default function ObrolanGemini({
     setFoto(null);
     setSibuk(true);
     try {
-      const r = await fetch("/api/uji-gemini", {
+      const r = await fetch(p.endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await headerBerSesi()) },
         body: JSON.stringify({
@@ -125,7 +131,7 @@ export default function ObrolanGemini({
         ]);
         return;
       }
-      if (j.sumber === "gemini") catatBiaya(j.biaya);
+      if (dariModel(j.sumber)) catatBiaya(j.biaya);
       setObrolan((o) => [
         ...o,
         {
@@ -145,7 +151,7 @@ export default function ObrolanGemini({
     } catch (e) {
       setObrolan((o) => [
         ...o,
-        { id: idBaru(), role: "galat", content: "Tidak bisa menghubungi /api/uji-gemini: " + (e as Error).message },
+        { id: idBaru(), role: "galat", content: `Tidak bisa menghubungi ${p.endpoint}: ` + (e as Error).message },
       ]);
     } finally {
       setSibuk(false);
@@ -162,30 +168,31 @@ export default function ObrolanGemini({
           <div className="min-w-0">
             <h2 className="m-0 text-lg font-bold">{judul}</h2>
             <p className="mt-1 mb-0 text-[0.84rem] text-muted">
-              Anda = pembeli, Gemini = CS. Tidak masuk console CS dan hilang saat panel ditutup.
+              Anda = pembeli, {p.nama} = CS. Tidak masuk console CS dan hilang saat panel ditutup.
             </p>
           </div>
           <span className={`shrink-0 text-xs font-semibold ${statusKelas}`}>{statusTeks}</span>
         </div>
 
         <p className="mt-0 mb-2.5 rounded-xl bg-[#fef3c7] px-3 py-2 text-xs leading-relaxed text-[#92400e]">
-          Setiap <b>Kirim</b> = 1 panggilan Gemini (kecuali dicegat satpam/template), dan seluruh obrolan dikirim ulang
-          tiap giliran — token masuk makin besar. Bila key Anda <b>tier gratis</b>, isinya boleh dipakai Google untuk
-          melatih model: <b>jangan pakai foto atau data pembeli asli</b>.
+          Setiap <b>Kirim</b> = 1 panggilan {p.nama} (kecuali dicegat satpam/template), dan seluruh obrolan dikirim ulang
+          tiap giliran — token masuk makin besar. {p.peringatan} <b>Jangan pakai foto atau data pembeli asli.</b>
         </p>
 
         {galatInfo && (
-          <p className="mt-0 mb-2.5 rounded-xl bg-[#fee2e2] px-3 py-2 text-xs text-[#b91c1c]">Status Gemini: {galatInfo}</p>
+          <p className="mt-0 mb-2.5 rounded-xl bg-[#fee2e2] px-3 py-2 text-xs text-[#b91c1c]">
+            Status {p.nama}: {galatInfo}
+          </p>
         )}
         {info?.galatModel && (
           <p className="mt-0 mb-2.5 rounded-xl bg-[#fef3c7] px-3 py-2 text-xs text-[#92400e]">
-            Daftar model dari Google gagal dimuat ({info.galatModel}) — memakai model bawaan.
+            Daftar model {p.nama} gagal dimuat ({info.galatModel}) — memakai model bawaan.
           </p>
         )}
 
         <div className="flex flex-wrap items-center gap-2">
           <select
-            aria-label="Model Gemini"
+            aria-label={`Model ${p.nama}`}
             value={model}
             onChange={(e) => setModel(e.target.value)}
             disabled={!info || pilihanModel.length === 0}
@@ -211,7 +218,7 @@ export default function ObrolanGemini({
         </div>
         <label className="mt-2 flex items-center gap-2 text-[0.82rem] text-text-2">
           <input type="checkbox" checked={lewati} onChange={(e) => setLewati(e.target.checked)} />
-          Kirim langsung ke Gemini (lewati satpam &amp; template)
+          Kirim langsung ke {p.nama} (lewati satpam &amp; template)
         </label>
       </div>
 
@@ -261,14 +268,14 @@ export default function ObrolanGemini({
                 <span className={`rounded-md px-1.5 py-0.5 text-[0.58rem] font-extrabold ${actionTagClass(g.action)}`}>
                   {g.action}
                 </span>
-                {g.sumber === "gemini" ? (
+                {dariModel(g.sumber) ? (
                   <span className="text-[0.7rem] text-muted">
-                    ✨ {g.model}
+                    {p.ikon} {g.model}
                     {typeof g.waktuMs === "number" ? ` · ${(g.waktuMs / 1000).toFixed(1)} dtk` : ""}
                   </span>
                 ) : (
                   <span className="rounded-md bg-green-mint px-1.5 py-0.5 text-[0.58rem] font-extrabold text-green-dark">
-                    {g.sumber === "satpam" ? "🛡️ SATPAM" : "⚡ TEMPLATE"} [{g.kode}] · Gemini tidak dipanggil
+                    {g.sumber === "satpam" ? "🛡️ SATPAM" : "⚡ TEMPLATE"} [{g.kode}] · {p.nama} tidak dipanggil
                   </span>
                 )}
               </div>
@@ -281,14 +288,14 @@ export default function ObrolanGemini({
                     {g.panjang.panjang}/{BATAS_BALASAN} kar
                   </span>
                 )}
-                {g.sumber === "gemini" && g.token && (
+                {dariModel(g.sumber) && g.token && (
                   <>
                     {" · "}token masuk {formatTokens(g.token.masuk)} · keluar {formatTokens(g.token.keluar)} · berpikir{" "}
                     {formatTokens(g.token.berpikir)}
                     {g.biaya &&
                       (g.biaya.dikenal
-                        ? ` · ${formatIdr(g.biaya.idr)} (${formatUsd(g.biaya.usd)}) bila berbayar`
-                        : " · tarif model belum ada di tabel")}
+                        ? ` · ${formatIdr(g.biaya.idr)} (${formatUsd(g.biaya.usd)})${p.akhiranBiaya ? " bila berbayar" : ""}`
+                        : ` · ${p.tanpaTarif}`)}
                   </>
                 )}
               </div>
@@ -296,7 +303,7 @@ export default function ObrolanGemini({
           ),
         )}
 
-        {sibuk && <div className="self-start text-xs text-muted">Gemini sedang mengetik…</div>}
+        {sibuk && <div className="self-start text-xs text-muted">{p.nama} sedang mengetik…</div>}
         <div ref={bawah} />
       </div>
 
@@ -347,7 +354,7 @@ export default function ObrolanGemini({
                 void kirim();
               }
             }}
-            placeholder={siap ? "Tulis pesan sebagai pembeli…" : "Gemini belum siap"}
+            placeholder={siap ? "Tulis pesan sebagai pembeli…" : `${p.nama} belum siap`}
             className="min-h-11 min-w-0 flex-1 resize-none rounded-xl border border-line bg-green-soft px-3 py-2.5 text-[0.9rem] text-text outline-none focus:border-green"
           />
           <button
@@ -362,7 +369,7 @@ export default function ObrolanGemini({
         <p className="mt-2 mb-0 text-[0.7rem] text-muted">
           Enter = kirim · Shift+Enter = baris baru · {jumlahGiliran} giliran
           {sesi.panggilan > 0 &&
-            ` · ${sesi.panggilan} panggilan Gemini, perkiraan ${formatIdr(sesi.idr)} bila berbayar (tier gratis: Rp 0)`}
+            ` · ${sesi.panggilan} panggilan ${p.nama}${p.hitungRupiah ? `, perkiraan ${formatIdr(sesi.idr)}${p.akhiranBiaya}` : ` (${p.tanpaTarif})`}`}
         </p>
       </div>
     </section>

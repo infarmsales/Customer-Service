@@ -683,13 +683,20 @@ export default function AiChatbot() {
             />
           </div>
 
-          {/* Gemini — meja uji pembanding. Panggilannya lewat
-              /api/uji-gemini, terpisah dari /api/chat, jadi chat
-              pelanggan tetap Claude apa pun yang dicoba di sini. */}
-          <div className="mt-4">
+          {/* Gemini & NVIDIA — meja uji pembanding, berdampingan di
+              layar lebar. Panggilannya lewat /api/uji-gemini dan
+              /api/uji-openai?penyedia=nvidia, terpisah dari /api/chat,
+              jadi chat pelanggan tetap Claude apa pun yang dicoba di sini. */}
+          <div className="mt-4 grid grid-cols-2 items-start gap-4 max-wide:grid-cols-1">
             <UjiGemini
-              judul="🧪 Uji Gemini (pembanding)"
+              judul="✨ Uji Gemini (pembanding)"
               contoh={SAMPLES.filter((s) => s.catatan === "perlu AI").map((s) => s.pesan)}
+              penyedia="gemini"
+            />
+            <UjiGemini
+              judul="🟩 Uji NVIDIA (pembanding)"
+              contoh={SAMPLES.filter((s) => s.catatan === "perlu AI").map((s) => s.pesan)}
+              penyedia="nvidia"
             />
           </div>
         </>

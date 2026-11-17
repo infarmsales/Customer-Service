@@ -191,3 +191,62 @@ export function biayaGemini(
   const usd = per(masuk - cache, tarif.input) + per(cache, tarif.cache) + per(keluar + berpikir, tarif.output);
   return { masuk, keluar, berpikir, usd, idr: usd * USD_TO_IDR, dikenal: true };
 }
+
+/* ===========================================================
+   Tarif OpenAI — HANYA untuk meja uji pembanding (AI Chatbot &
+   Simulasi), kembaran tabel Gemini di atas.
+
+   USD per 1 juta token, tarif Standard (bukan Batch/Flex/Priority).
+   ⚠️ BELUM DIVERIFIKASI: angka diambil dari pengetahuan agen coding
+   (harga publik pertengahan 2026), BUKAN dari tabel yang diberikan
+   pemilik proyek. Cocokkan dengan openai.com/api/pricing sebelum
+   dipakai untuk keputusan. Model yang tidak ada di sini tampil
+   "tarif belum ada di tabel" — bukan Rp 0.
+
+   - Token penalaran (reasoning_tokens) ditagih sebagai keluar.
+   - Token masuk dari cache (cached_tokens, sudah termasuk di
+     prompt_tokens) memakai tarif `cache`.
+   - OpenAI TIDAK punya tier gratis API: angka ini = yang ditagih.
+   =========================================================== */
+const HARGA_OPENAI: [awalan: string, harga: TarifGemini][] = [
+  /* Urutan penting: awalan yang lebih panjang lebih dulu. */
+  ["gpt-5.2", { input: 1.75, output: 14, cache: 0.175 }],
+  ["gpt-5.1", { input: 1.25, output: 10, cache: 0.125 }],
+  ["gpt-5-mini", { input: 0.25, output: 2, cache: 0.025 }],
+  ["gpt-5-nano", { input: 0.05, output: 0.4, cache: 0.005 }],
+  ["gpt-5", { input: 1.25, output: 10, cache: 0.125 }],
+  ["gpt-4.1-mini", { input: 0.4, output: 1.6, cache: 0.1 }],
+  ["gpt-4.1-nano", { input: 0.1, output: 0.4, cache: 0.025 }],
+  ["gpt-4.1", { input: 2, output: 8, cache: 0.5 }],
+  ["gpt-4o-mini", { input: 0.15, output: 0.6, cache: 0.075 }],
+  ["gpt-4o", { input: 2.5, output: 10, cache: 1.25 }],
+  ["o4-mini", { input: 1.1, output: 4.4, cache: 0.275 }],
+  ["o3-mini", { input: 1.1, output: 4.4, cache: 0.55 }],
+  ["o3", { input: 2, output: 8, cache: 0.5 }],
+];
+
+/**
+ * Cocokkan model ke tarif. "gpt-5.1-chat-latest" memakai tarif gpt-5.1,
+ * tetapi varian kecil yang BELUM ada di tabel (mis. "gpt-5.2-mini")
+ * TIDAK boleh diam-diam memakai tarif kakaknya — hasilnya tidak dikenal.
+ */
+function tarifOpenAI(model: string): TarifGemini | null {
+  for (const [awalan, harga] of HARGA_OPENAI) {
+    if (model === awalan) return harga;
+    if (model.startsWith(awalan + "-") && !/^(mini|nano|pro)\b/.test(model.slice(awalan.length + 1))) return harga;
+  }
+  return null;
+}
+
+export function biayaOpenAI(
+  model: string,
+  token: { masuk: number; keluar: number; berpikir: number; dariCache?: number },
+): BiayaGemini {
+  const { masuk, keluar, berpikir } = token;
+  const tarif = tarifOpenAI(model);
+  if (!tarif) return { masuk, keluar, berpikir, usd: 0, idr: 0, dikenal: false };
+  const cache = Math.min(Math.max(token.dariCache ?? 0, 0), masuk);
+  const per = (t: number, usdPerJuta: number) => (t / 1_000_000) * usdPerJuta;
+  const usd = per(masuk - cache, tarif.input) + per(cache, tarif.cache) + per(keluar + berpikir, tarif.output);
+  return { masuk, keluar, berpikir, usd, idr: usd * USD_TO_IDR, dikenal: true };
+}

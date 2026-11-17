@@ -37,6 +37,13 @@ import {
   WARNA_PLATFORM,
 } from "@/lib/toko";
 
+/** Contoh pembuka di panel uji Gemini & NVIDIA — sama supaya adil. */
+const CONTOH_UJI = [
+  "Kak tanaman saya kenapa ya daunnya begini?",
+  "Ini produk yang saya terima, cara pakainya gimana?",
+  "Paket saya datang begini kak",
+];
+
 const USUL = [
   "kak barangnya rusak pas sampe, mau refund",
   "nem oilnya dipakenya gmn kak",
@@ -76,10 +83,16 @@ export default function SimulasiPelanggan() {
   const [teks, setTeks] = useState("");
   const [sibuk, setSibuk] = useState(false);
   const [riwayat, setRiwayat] = useState<Gelembung[]>([]);
-  const [ujiGemini, setUjiGemini] = useState(false);
+  /* Meja uji model: Gemini, NVIDIA, atau keduanya berdampingan.
+     null = tertutup. */
+  const [ujiTampil, setUjiTampil] = useState<"gemini" | "nvidia" | "dua" | null>(null);
   /* Sekali dibuka, panel obrolan tetap terpasang (hanya disembunyikan)
      supaya obrolan tidak hilang karena "Tutup" yang tidak sengaja. */
-  const [geminiDimuat, setGeminiDimuat] = useState(false);
+  const [ujiDimuat, setUjiDimuat] = useState(false);
+  const bukaUji = (t: "gemini" | "nvidia" | "dua") => {
+    setUjiTampil(t);
+    setUjiDimuat(true);
+  };
   const bawah = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -223,20 +236,25 @@ export default function SimulasiPelanggan() {
             {LABEL_PLATFORM[aktif.platform]} · biasanya membalas dalam beberapa menit
           </div>
         </div>
-        {/* Obrolan uji dengan Gemini (bolak-balik, boleh foto SUNGGUHAN)
-            — panel terpisah dari alur pembeli di bawah. Alur pembeli tetap tidak pernah memanggil
-            AI berbayar (lihat /api/simulasi); panel ini memanggil
-            Gemini HANYA saat tombol Kirim di dalam panel ditekan, dan
-            tidak membuat percakapan apa pun. */}
+        {/* Obrolan uji dengan Gemini / NVIDIA (bolak-balik, boleh foto
+            SUNGGUHAN) — panel terpisah dari alur pembeli di bawah. Alur
+            pembeli tetap tidak pernah memanggil AI berbayar (lihat
+            /api/simulasi); panel ini memanggil model HANYA saat tombol
+            Kirim di dalam panel ditekan, dan tidak membuat percakapan
+            apa pun. */}
         <button
           type="button"
-          onClick={() => {
-            setUjiGemini(true);
-            setGeminiDimuat(true);
-          }}
+          onClick={() => bukaUji("gemini")}
           className="min-h-9 shrink-0 cursor-pointer rounded-lg border-none bg-white/20 px-2.5 py-1.5 text-[0.72rem] font-bold text-white"
         >
           🧪 Uji Gemini
+        </button>
+        <button
+          type="button"
+          onClick={() => bukaUji("nvidia")}
+          className="min-h-9 shrink-0 cursor-pointer rounded-lg border-none bg-white/20 px-2.5 py-1.5 text-[0.72rem] font-bold text-white"
+        >
+          🧪 Uji NVIDIA
         </button>
         <Link
           href="/chat"
@@ -246,26 +264,64 @@ export default function SimulasiPelanggan() {
         </Link>
       </header>
 
-      {geminiDimuat && (
+      {ujiDimuat && (
         <div
-          className={`fixed inset-0 z-50 overflow-y-auto bg-[#0f172a]/95 p-4 max-mini:p-2 ${ujiGemini ? "" : "hidden"}`}
+          className={`fixed inset-0 z-50 overflow-y-auto bg-[#0f172a]/95 p-4 max-mini:p-2 ${ujiTampil ? "" : "hidden"}`}
         >
-          <div className="mx-auto flex max-w-2xl flex-col gap-3">
-            <button
-              type="button"
-              onClick={() => setUjiGemini(false)}
-              className="min-h-10 cursor-pointer self-end rounded-xl border border-white/25 bg-white/10 px-3.5 text-[0.84rem] font-bold text-white"
-            >
-              ✕ Tutup
-            </button>
-            <ObrolanGemini
-              judul="🧪 Obrolan dengan Gemini"
-              contoh={[
-                "Kak tanaman saya kenapa ya daunnya begini?",
-                "Ini produk yang saya terima, cara pakainya gimana?",
-                "Paket saya datang begini kak",
-              ]}
-            />
+          <div
+            className={`mx-auto flex flex-col gap-3 ${ujiTampil === "dua" ? "max-w-[1400px]" : "max-w-2xl"}`}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              {/* Kedua obrolan tetap hidup saat berganti tampilan —
+                  hanya disembunyikan, tidak dilepas. */}
+              <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Model yang diuji">
+                {(
+                  [
+                    ["gemini", "✨ Gemini"],
+                    ["nvidia", "🟩 NVIDIA"],
+                    ["dua", "⚖️ Berdampingan"],
+                  ] as const
+                ).map(([k, label]) => (
+                  <button
+                    key={k}
+                    type="button"
+                    role="tab"
+                    aria-selected={ujiTampil === k}
+                    onClick={() => setUjiTampil(k)}
+                    className={`min-h-10 cursor-pointer rounded-xl border px-3 text-[0.82rem] font-bold ${
+                      ujiTampil === k ? "border-white bg-white text-[#0f172a]" : "border-white/25 bg-white/10 text-white"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setUjiTampil(null)}
+                className="min-h-10 cursor-pointer rounded-xl border border-white/25 bg-white/10 px-3.5 text-[0.84rem] font-bold text-white"
+              >
+                ✕ Tutup
+              </button>
+            </div>
+            {ujiTampil === "dua" && (
+              <p className="m-0 text-xs text-white/70">
+                Dua obrolan terpisah: ketik pesan yang sama di kedua panel untuk membandingkan. Masing-masing Kirim
+                = 1 panggilan ke model itu.
+              </p>
+            )}
+            <div className={ujiTampil === "dua" ? "grid grid-cols-2 items-start gap-3 max-tablet:grid-cols-1" : ""}>
+              {(
+                [
+                  ["gemini", "✨ Obrolan dengan Gemini"],
+                  ["nvidia", "🟩 Obrolan dengan NVIDIA"],
+                ] as const
+              ).map(([k, judul]) => (
+                <div key={k} className={ujiTampil === "dua" || ujiTampil === k ? "" : "hidden"}>
+                  <ObrolanGemini judul={judul} contoh={CONTOH_UJI} penyedia={k} />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

@@ -2,6 +2,8 @@
 
 /* ===========================================================
    Panel "Uji Gemini" — dipakai di halaman AI Chatbot dan Simulasi.
+   Dengan `penyedia="openai"` panel yang sama menguji ChatGPT
+   (/api/uji-openai), supaya kedua model dibandingkan apple-to-apple.
 
    Satu pesan uji (boleh dengan FOTO SUNGGUHAN) -> /api/uji-gemini ->
    satu balasan Gemini, lengkap dengan aksi, panjang, token, dan
@@ -17,12 +19,12 @@
 import { useRef, useState } from "react";
 import { actionTagClass } from "./actionTag";
 import { headerBerSesi } from "@/lib/supabase/header";
-import { bacaJsonAman, kecilkanFoto, useInfoGemini } from "./geminiBersama";
+import { bacaJsonAman, kecilkanFoto, useInfoPenyedia, dariModel, type Penyedia } from "./geminiBersama";
 import { BATAS_BALASAN } from "@/lib/limits";
 import { formatIdr, formatTokens, formatUsd } from "@/lib/pricing";
 
 type Hasil = {
-  sumber: "gemini" | "satpam" | "template";
+  sumber: "gemini" | "openai" | "satpam" | "template";
   action: string;
   reply: string;
   kode?: string;
@@ -37,8 +39,12 @@ type Hasil = {
   panjang?: { panjang: number; lewat: boolean; mepet: boolean; sisa: number };
 };
 
-export default function UjiGemini({ judul = "🧪 Uji Gemini", contoh = [] as string[] }) {
-  const { info, galatInfo, model, setModel, pilihanModel, siap, statusTeks, statusKelas } = useInfoGemini();
+export default function UjiGemini({
+  judul = "🧪 Uji Gemini",
+  contoh = [] as string[],
+  penyedia = "gemini" as Penyedia,
+}) {
+  const { p, info, galatInfo, model, setModel, pilihanModel, siap, statusTeks, statusKelas } = useInfoPenyedia(penyedia);
   const [pesan, setPesan] = useState("");
   const [foto, setFoto] = useState<{ mime: string; data: string; pratinjau: string; nama: string } | null>(null);
   const [lewati, setLewati] = useState(false);
@@ -68,7 +74,7 @@ export default function UjiGemini({ judul = "🧪 Uji Gemini", contoh = [] as st
     setGalat(null);
     setHasil(null);
     try {
-      const r = await fetch("/api/uji-gemini", {
+      const r = await fetch(p.endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await headerBerSesi()) },
         body: JSON.stringify({
@@ -87,11 +93,11 @@ export default function UjiGemini({ judul = "🧪 Uji Gemini", contoh = [] as st
       }
       const h = j as Hasil;
       setHasil(h);
-      if (h.sumber === "gemini" && h.biaya) {
+      if (dariModel(h.sumber) && h.biaya) {
         setSesi((s) => ({ panggilan: s.panggilan + 1, idr: s.idr + h.biaya!.idr, usd: s.usd + h.biaya!.usd }));
       }
     } catch (e) {
-      setGalat("Tidak bisa menghubungi /api/uji-gemini: " + (e as Error).message);
+      setGalat(`Tidak bisa menghubungi ${p.endpoint}: ` + (e as Error).message);
     } finally {
       setSibuk(false);
     }
@@ -111,26 +117,25 @@ export default function UjiGemini({ judul = "🧪 Uji Gemini", contoh = [] as st
       </div>
 
       <p className="mt-0 mb-3 rounded-xl bg-[#fef3c7] px-3 py-2 text-xs leading-relaxed text-[#92400e]">
-        Setiap <b>Minta balasan</b> = 1 panggilan Gemini (berbayar, atau memakai kuota tier gratis), kecuali dicegat
-        satpam/template. Teks dan foto dikirim ke Google — bila key Anda <b>tier gratis</b>, isinya boleh dipakai Google
-        untuk melatih model, jadi <b>jangan pakai foto atau data pembeli asli</b>.
+        Setiap <b>Minta balasan</b> = 1 panggilan {p.nama}, kecuali dicegat satpam/template. {p.peringatan}{" "}
+        <b>Jangan pakai foto atau data pembeli asli.</b>
       </p>
 
       {galatInfo && (
-        <p className="mt-0 mb-3 rounded-xl bg-[#fee2e2] px-3 py-2 text-xs text-[#b91c1c]">Status Gemini: {galatInfo}</p>
+        <p className="mt-0 mb-3 rounded-xl bg-[#fee2e2] px-3 py-2 text-xs text-[#b91c1c]">Status {p.nama}: {galatInfo}</p>
       )}
       {info?.galatModel && (
         <p className="mt-0 mb-3 rounded-xl bg-[#fef3c7] px-3 py-2 text-xs text-[#92400e]">
-          Daftar model dari Google gagal dimuat ({info.galatModel}) — memakai model bawaan.
+          Daftar model {p.nama} gagal dimuat ({info.galatModel}) — memakai model bawaan.
         </p>
       )}
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <label className="text-[0.86rem] font-semibold text-text-2" htmlFor="model-gemini">
+        <label className="text-[0.86rem] font-semibold text-text-2" htmlFor={`model-${penyedia}`}>
           Model
         </label>
         <select
-          id="model-gemini"
+          id={`model-${penyedia}`}
           value={model}
           onChange={(e) => setModel(e.target.value)}
           disabled={!info || pilihanModel.length === 0}
@@ -206,7 +211,7 @@ export default function UjiGemini({ judul = "🧪 Uji Gemini", contoh = [] as st
         )}
         <label className="flex items-center gap-2 text-[0.84rem] text-text-2" title="Satpam & template tidak dijalankan">
           <input type="checkbox" checked={lewati} onChange={(e) => setLewati(e.target.checked)} />
-          Kirim langsung ke Gemini (lewati satpam & template)
+          Kirim langsung ke {p.nama} (lewati satpam & template)
         </label>
       </div>
 
@@ -216,7 +221,7 @@ export default function UjiGemini({ judul = "🧪 Uji Gemini", contoh = [] as st
         disabled={sibuk || !siap}
         className="w-full cursor-pointer rounded-xl border-none bg-green px-6 py-3 font-bold text-white transition hover:bg-green-hover disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {sibuk ? "Menunggu Gemini…" : "Minta balasan Gemini ✨"}
+        {sibuk ? `Menunggu ${p.nama}…` : `Minta balasan ${p.nama} ${p.ikon}`}
       </button>
 
       {galat && (
@@ -231,15 +236,15 @@ export default function UjiGemini({ judul = "🧪 Uji Gemini", contoh = [] as st
             <span className={`rounded-md px-1.5 py-0.5 text-[0.6rem] font-extrabold ${actionTagClass(hasil.action)}`}>
               {hasil.action}
             </span>
-            {hasil.sumber === "gemini" ? (
+            {dariModel(hasil.sumber) ? (
               <span className="text-xs text-muted">
-                ✨ {hasil.model}
+                {p.ikon} {hasil.model}
                 {hasil.denganFoto ? " · dengan foto" : ""}
                 {typeof hasil.waktuMs === "number" ? ` · ${(hasil.waktuMs / 1000).toFixed(1)} dtk` : ""}
               </span>
             ) : (
               <span className="rounded-md bg-green-mint px-1.5 py-0.5 text-[0.6rem] font-extrabold text-green-dark">
-                {hasil.sumber === "satpam" ? "🛡️ SATPAM" : "⚡ TEMPLATE"} [{hasil.kode}] · Gemini tidak dipanggil · Rp 0
+                {hasil.sumber === "satpam" ? "🛡️ SATPAM" : "⚡ TEMPLATE"} [{hasil.kode}] · {p.nama} tidak dipanggil · Rp 0
               </span>
             )}
           </div>
@@ -257,20 +262,20 @@ export default function UjiGemini({ judul = "🧪 Uji Gemini", contoh = [] as st
             </p>
           )}
 
-          {hasil.sumber !== "gemini" && hasil.alasan && (
+          {!dariModel(hasil.sumber) && hasil.alasan && (
             <p className="mt-2 mb-0 text-xs text-muted">
-              {hasil.alasan} Centang &quot;Kirim langsung ke Gemini&quot; untuk melihat jawaban modelnya.
+              {hasil.alasan} Centang &quot;Kirim langsung ke {p.nama}&quot; untuk melihat jawaban modelnya.
             </p>
           )}
 
-          {hasil.sumber === "gemini" && hasil.token && hasil.biaya && (
+          {dariModel(hasil.sumber) && hasil.token && hasil.biaya && (
             <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 rounded-lg bg-white px-3 py-2 text-xs text-text-2 max-mini:grid-cols-1">
               <span>Token masuk: {formatTokens(hasil.token.masuk)}</span>
               <span>Token keluar: {formatTokens(hasil.token.keluar)}</span>
               <span>Token berpikir: {formatTokens(hasil.token.berpikir)}</span>
               <span>
-                Biaya bila berbayar:{" "}
-                {hasil.biaya.dikenal ? `${formatIdr(hasil.biaya.idr)} · ${formatUsd(hasil.biaya.usd)}` : "tarif model belum ada di tabel"}
+                {p.akhiranBiaya ? "Biaya bila berbayar:" : "Biaya:"}{" "}
+                {hasil.biaya.dikenal ? `${formatIdr(hasil.biaya.idr)} · ${formatUsd(hasil.biaya.usd)}` : p.tanpaTarif}
               </span>
             </div>
           )}
@@ -279,7 +284,8 @@ export default function UjiGemini({ judul = "🧪 Uji Gemini", contoh = [] as st
 
       {sesi.panggilan > 0 && (
         <p className="mt-3 mb-0 text-xs text-muted">
-          Sesi ini: {sesi.panggilan} panggilan Gemini · perkiraan {formatIdr(sesi.idr)} bila berbayar (tier gratis: Rp 0).
+          Sesi ini: {sesi.panggilan} panggilan {p.nama}
+          {p.hitungRupiah ? ` · perkiraan ${formatIdr(sesi.idr)}${p.akhiranBiaya}` : ` (${p.tanpaTarif})`}.
         </p>
       )}
     </section>

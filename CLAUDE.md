@@ -27,6 +27,14 @@ saldo tanpa sepengetahuan pemiliknya — jangan diulangi.
   `generativelanguage.googleapis.com` ...`:generateContent` (Gemini,
   meja uji di AI Chatbot & Simulasi). `GET /api/uji-gemini` hanya
   membaca daftar model dan aman.
+- `POST /api/uji-openai` dan apa pun yang memanggil
+  `api.openai.com/v1/chat/completions` (ChatGPT, pembanding Gemini di
+  meja uji yang sama). **Tidak ada tier gratis** — setiap balasan
+  memotong kredit sungguhan. `GET /api/uji-openai` hanya membaca daftar
+  model dan aman.
+- `POST /api/uji-openai?penyedia=nvidia` dan apa pun yang memanggil
+  `integrate.api.nvidia.com/v1/chat/completions` (NVIDIA, memakai
+  kredit uji akun pemilik). `GET` dengan `?penyedia=nvidia` aman.
 - Uji apa pun yang tujuannya "memastikan balasan AI benar"
 
 **`/api/chat` berbahaya justru karena kadang gratis.** Pesan yang cocok
@@ -69,6 +77,7 @@ pemilik proyek menjawab.
 | `npm run uji-shopee-sinkron` | 104 kasus sinkron pesanan skala besar: potongan per jam & pembelahan adaptif, anggaran waktu, titik sinkron yang hanya maju setelah potongan tersimpan (simulasi toko 8.000 pesanan/hari), kunci kedaluwarsa, lewati tulis yang tidak berubah, `SHOPEE_SIMPAN_RAW`, tabel keputusan: tombol admin selalu jalan, cron butuh kedua sakelar (nilai rusak = dilewati), dan toko baru dari `shop_id_list` tidak ikut jadwal otomatis |
 | `npm run uji-toko-chat` | 43 kasus daftar toko panel Chat: "Semua toko" hanya chat toko asli, simulasi bernama toko asli tidak ikut terhitung, toko bernama "Test" BUKAN toko uji, toko nonaktif/terhapus yang masih punya chat tetap tampil |
 | `npm run uji-gemini` | 75 kasus meja uji Gemini tanpa jaringan: tarif seri 2.5–4 dari tabel harga 16 Nov 2026 (token cache bertarif cache, Pro di atas 200K bertarif atas), galat 503 (model penuh) dicoba ulang sekali tapi 429 kuota tidak, galat Google dijelaskan untuk manusia, riwayat obrolan Simulasi dirapikan (role asing dibuang, maks. 20 giliran, hanya 3 foto terbaru dikirim ulang, pesan pembeli berurutan digabung), nama model tidak bisa menyusup ke path URL, foto dicek jenis/ukuran/base64, ringkasan "berpikir" tidak ikut jadi balasan, jawaban kosong karena token habis untuk berpikir dijelaskan, daftar model hanya teks generateContent, API key tidak pernah ikut di pesan galat, tarif flash-lite tidak tertukar dengan flash |
+| `npm run uji-openai` | 74 kasus meja uji ChatGPT & NVIDIA tanpa jaringan: `max_completion_tokens` (bukan `max_tokens`), token penalaran tidak dihitung dua kali, riwayat & foto berbentuk sama dengan Gemini, saldo habis (`insufficient_quota`) tidak dicoba ulang, key `sk-…` tidak pernah ikut di pesan galat (termasuk yang dikutip sebagian oleh OpenAI), varian model yang belum ada di tabel tarif tidak memakai tarif kakaknya, NVIDIA memakai `max_tokens` & nama `penerbit/model`, `<think>` model penalaran tidak bocor ke balasan, key `nvapi-…` disembunyikan |
 | `npm run uji-ringkasan` | 21 kasus angka nyata Beranda & Statistik: antrean tertua (bukan rata-rata), rentang waktu, dan nol yang berbeda dari "belum ada data" |
 | `npm run uji-pesanan` | 26 kasus pesanan contoh di tab Pesanan: nomor tidak pernah berubah (kalau berubah, pencarian diam-diam gagal), data asli tidak ditimpa, katalog kosong tidak mengarang nama produk |
 | `npm run uji-cari` | 46 kasus pencocokan pencarian & papan croscek: nomor bertanda baca tetap ketemu, nama pendek TIDAK melebar, nomor yang tidak ketemu tidak pernah hilang dari daftar |

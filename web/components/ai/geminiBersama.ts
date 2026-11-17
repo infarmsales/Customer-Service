@@ -1,16 +1,75 @@
 "use client";
 
 /* ===========================================================
-   Bagian bersama panel Gemini: UjiGemini (sekali tanya, halaman AI
+   Bagian bersama panel meja uji: UjiGemini (sekali tanya, halaman AI
    Chatbot) dan ObrolanGemini (bolak-balik, Simulasi).
 
-   Tidak ada yang di sini memanggil generateContent. useInfoGemini
-   hanya GET /api/uji-gemini — status + models.list, tanpa kuota
-   generate.
+   Kedua panel melayani DUA penyedia lewat prop `penyedia`:
+     "gemini" -> /api/uji-gemini   (Google)
+     "openai" -> /api/uji-openai   (ChatGPT)
+   Tampilan & alurnya sengaja sama supaya perbandingan model adil.
+
+   Tidak ada yang di sini menghasilkan teks berbayar. useInfoPenyedia
+   hanya GET status + daftar model (gratis).
    =========================================================== */
 
 import { useEffect, useState } from "react";
 import { headerBerSesi } from "@/lib/supabase/header";
+
+export type Penyedia = "gemini" | "openai" | "nvidia";
+
+type InfoPenyedia = {
+  nama: string;
+  endpoint: string;
+  envKey: string;
+  ikon: string;
+  /** Kalimat soal biaya & data, tampil di kotak kuning panel. */
+  peringatan: string;
+  /** Ditempel di belakang angka rupiah per balasan. */
+  akhiranBiaya: string;
+  /** false = rupiah tidak dihitung sama sekali (NVIDIA memakai kredit uji, bukan tarif per token). */
+  hitungRupiah: boolean;
+  /** Pengganti angka biaya bila model tidak ada di tabel tarif. */
+  tanpaTarif: string;
+};
+
+export const PENYEDIA: Record<Penyedia, InfoPenyedia> = {
+  gemini: {
+    nama: "Gemini",
+    endpoint: "/api/uji-gemini",
+    envKey: "GEMINI_API_KEY",
+    ikon: "✨",
+    peringatan: "Bila key Anda tier gratis, isinya boleh dipakai Google untuk melatih model.",
+    akhiranBiaya: " bila berbayar (tier gratis: Rp 0)",
+    hitungRupiah: true,
+    tanpaTarif: "tarif model belum ada di tabel",
+  },
+  openai: {
+    nama: "ChatGPT",
+    endpoint: "/api/uji-openai",
+    envKey: "OPENAI_API_KEY",
+    ikon: "🤖",
+    peringatan: "API OpenAI tidak punya tier gratis — setiap balasan memotong kredit sungguhan.",
+    akhiranBiaya: "",
+    hitungRupiah: true,
+    tanpaTarif: "tarif model belum ada di tabel",
+  },
+  nvidia: {
+    nama: "NVIDIA",
+    endpoint: "/api/uji-openai?penyedia=nvidia",
+    envKey: "NVIDIA_API_KEY",
+    ikon: "🟩",
+    peringatan:
+      "NVIDIA memakai kredit uji akun build.nvidia.com (bukan tarif per token) dan dibatasi jumlah permintaan per menit. Cek sisa kredit di akun Anda.",
+    akhiranBiaya: "",
+    hitungRupiah: false,
+    tanpaTarif: "memakai kredit uji NVIDIA",
+  },
+};
+
+/** Sumber jawaban yang berarti model DIPANGGIL (bukan dicegat satpam/template). */
+export const dariModel = (sumber: string | undefined) =>
+  sumber === "gemini" || sumber === "openai" || sumber === "nvidia";
 
 export type InfoGemini = {
   tersedia: boolean;
@@ -60,7 +119,7 @@ export async function bacaJsonAman(r: Response): Promise<any> {
     return JSON.parse(teks);
   } catch {
     const sebab = teks.includes("FUNCTION_INVOCATION_TIMEOUT")
-      ? "melewati batas waktu server (60 detik) — Gemini terlalu lama menjawab. Coba lagi atau pilih model yang lebih ringan."
+      ? "melewati batas waktu server (60 detik) — model terlalu lama menjawab. Coba lagi atau pilih model yang lebih ringan."
       : teks.includes("FUNCTION_PAYLOAD_TOO_LARGE") || r.status === 413
         ? "kiriman terlalu besar (foto terlalu banyak/besar). Mulai ulang obrolan."
         : teks.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 140) || "jawaban kosong";
@@ -68,8 +127,9 @@ export async function bacaJsonAman(r: Response): Promise<any> {
   }
 }
 
-/** Status Gemini + daftar model untuk dropdown. */
-export function useInfoGemini() {
+/** Status penyedia + daftar model untuk dropdown. */
+export function useInfoPenyedia(penyedia: Penyedia = "gemini") {
+  const p = PENYEDIA[penyedia];
   const [info, setInfo] = useState<InfoGemini | null>(null);
   const [galatInfo, setGalatInfo] = useState<string | null>(null);
   const [model, setModel] = useState("");
@@ -78,7 +138,7 @@ export function useInfoGemini() {
     let batal = false;
     void (async () => {
       try {
-        const r = await fetch("/api/uji-gemini", { headers: await headerBerSesi(), cache: "no-store" });
+        const r = await fetch(p.endpoint, { headers: await headerBerSesi(), cache: "no-store" });
         const j = await bacaJsonAman(r);
         if (batal) return;
         if (!r.ok) {
@@ -94,7 +154,7 @@ export function useInfoGemini() {
     return () => {
       batal = true;
     };
-  }, []);
+  }, [p.endpoint]);
 
   const daftar = info?.model ?? [];
   /* Model bawaan selalu ada di pilihan, walau daftar dari Google gagal dimuat. */
@@ -108,10 +168,10 @@ export function useInfoGemini() {
     : !info
       ? "memeriksa…"
       : !info.tersedia
-        ? "GEMINI_API_KEY belum diisi ⚠️"
+        ? `${p.envKey} belum diisi ⚠️`
         : info.terkunci
-          ? "Gemini dikunci 🔒"
-          : "Gemini siap ✅";
+          ? `${p.nama} dikunci 🔒`
+          : `${p.nama} siap ✅`;
   const statusKelas = !info
     ? "text-muted"
     : !info.tersedia
@@ -121,6 +181,7 @@ export function useInfoGemini() {
         : "text-green-dark";
 
   return {
+    p,
     info,
     galatInfo,
     model,
